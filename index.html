@@ -257,6 +257,7 @@ nav.tabs button[aria-current="page"]{color:var(--ink);font-weight:600}
       <p class="count" id="b-count"></p>
       <ul class="book" id="book"></ul>
       <button class="more" id="bookmore" hidden>Show more</button>
+      <button class="second" id="bookpdf" hidden>Download PDF of these entries</button>
     </div>
   </section>
 
@@ -286,10 +287,12 @@ nav.tabs button[aria-current="page"]{color:var(--ink);font-weight:600}
     </div>
     <div class="card"><h2>Where the money went</h2><div id="byitem"></div></div>
     <div class="card">
-      <h2>Excel and backup</h2>
+      <h2>Export and backup</h2>
       <p class="pmeta" style="margin:0 0 4px">Your diary is stored only on this phone. If you uninstall the app or clear Chrome’s data, it’s gone. Save a backup to Google Drive or WhatsApp now and then.</p>
       <p class="pmeta" id="lastbackup" style="margin:0"></p>
-      <button class="primary" id="excel">Download Excel for this project</button>
+      <button class="primary" id="pdf">Download PDF with slip photos</button>
+      <button class="second" id="excel">Download Excel for this project</button>
+      <p class="hint">The PDF opens on any phone and shows every slip photo. Excel photos show in the Excel or WPS app, but not in WhatsApp or Google Drive previews.</p>
       <button class="second" id="backup">Save full backup</button>
       <button class="second" id="restorebtn">Restore from backup</button>
       <input type="file" id="restorefile" accept=".json,application/json,text/plain" hidden>
@@ -800,6 +803,7 @@ function renderBook(){
   $("#book").innerHTML=list.length?list.slice(0,PB.limit).map(e=>rowHTML(e,showBal?run[e.id]:null)).join("")
     :`<li class="empty">${LIVE.length?"No entries match these filters.":"No entries yet. Add your first payment from the Add tab."}</li>`;
   $("#bookmore").hidden=list.length<=PB.limit;
+  PB.list=list;$("#bookpdf").hidden=!list.length;
   bindRows($("#book"));
 }
 
@@ -980,12 +984,13 @@ async function giveFile(name,blob){
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),10000);return true;
 }
-let excelLoading=null;
-function loadExcel(){
-  if(window.ExcelJS)return Promise.resolve();
-  return excelLoading||(excelLoading=new Promise((res,rej)=>{const s=document.createElement("script");s.src="exceljs.min.js";
-    s.onload=()=>res();s.onerror=()=>{excelLoading=null;s.remove();rej(new Error("exceljs"))};document.head.appendChild(s)}));
+const libLoading={};
+function loadLib(src,ready){
+  if(ready())return Promise.resolve();
+  return libLoading[src]||(libLoading[src]=new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;
+    s.onload=()=>ready()?res():rej(new Error("lib"));s.onerror=()=>{delete libLoading[src];s.remove();rej(new Error("lib"))};document.head.appendChild(s)}));
 }
+const loadExcel=()=>loadLib("exceljs.min.js",()=>window.ExcelJS);
 async function imgSize(blob){try{const b=await createImageBitmap(blob);const r={w:b.width,h:b.height};b.close&&b.close();return r}catch{return{w:3,h:4}}}
 async function buildExcel(){
   await loadExcel();
@@ -1039,9 +1044,111 @@ $("#excel").addEventListener("click",async()=>{
   const btn=$("#excel");if(!LIVE.length){toast("No entries to export yet");return}
   btn.disabled=true;btn.textContent="Preparing Excel…";
   try{const x=await buildExcel();await giveFile(x.name,x.blob)}
-  catch(err){console.error(err);toast(err&&err.message==="exceljs"?"Couldn’t load the Excel tool. Open the app once with internet, then try again.":"Couldn’t make the Excel file. Try again.")}
+  catch(err){console.error(err);toast(err&&err.message==="lib"?"Couldn’t load the Excel tool. Open the app once with internet, then try again.":"Couldn’t make the Excel file. Try again.")}
   btn.disabled=false;btn.textContent="Download Excel for this project";
 });
+
+/* ---------- PDF with slip photos ---------- */
+const pdfMoney=n=>"Rs "+numfmt.format(round2(+n||0));
+const pdfText=s=>String(s??"").replace(/₹\s?/g,"Rs ").replace(/[–—]/g,"-").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/×/g,"x");
+async function buildPdf(list,{title,filters}){
+  await loadLib("jspdf.umd.min.js",()=>window.jspdf&&window.jspdf.jsPDF);
+  const doc=new window.jspdf.jsPDF({unit:"pt",format:"a4",compress:true});
+  const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=36,CW=W-2*M,BOTTOM=H-M-16;
+  const INK=[28,43,58],MUTED=[93,107,119],RULE=[204,213,206],TAPE=[242,183,5],RED=[163,49,42];
+  const p=proj();let y=M;
+  list=[...list].sort((a,b)=>a.ts-b.ts);
+  const slipNo=new Map();list.forEach(e=>{if(e.slipKey)slipNo.set(e.id,slipNo.size+1)});
+  const font=(style,size,color)=>{doc.setFont("helvetica",style);doc.setFontSize(size);doc.setTextColor(...color)};
+  const stripe=()=>{for(let x=-20;x<W;x+=24){doc.setFillColor(...TAPE);doc.triangle(x,0,x+12,0,x+6,6,"F")}doc.setFillColor(...TAPE);doc.rect(0,0,W,3,"F")};
+  const newPage=()=>{doc.addPage();stripe();y=M};
+  stripe();
+
+  // heading
+  font("normal",9,MUTED);doc.text("PROPERTY ESTIMATES",M,y+6);
+  y+=30;font("bold",20,INK);doc.text(pdfText(p.name),M,y);
+  y+=17;font("normal",10,MUTED);
+  const span=list.length?`${fdate(list[0].ts)} to ${fdate(list[list.length-1].ts)}`:"";
+  doc.splitTextToSize(pdfText(`${title}. ${plural(list.length,"entry","entries")}${span?", "+span:""}. Made on ${fdate(Date.now())}.`),CW).forEach(l=>{doc.text(l,M,y);y+=13});
+  if(filters){doc.splitTextToSize(pdfText("Filters: "+filters),CW).forEach(l=>{doc.text(l,M,y);y+=13})}
+
+  // totals
+  y+=6;const t=sums(list),land=sums(list.filter(e=>groupOf(e)==="land")).t;
+  const boxes=[["Building cost (without land, documents)",t.t-land],["Land and documents",land],["Total",t.t]],bw=(CW-16)/3;
+  boxes.forEach(([l,v],i)=>{const x=M+i*(bw+8);doc.setDrawColor(...RULE);doc.setLineWidth(.8);
+    if(i===2){doc.setFillColor(255,244,204);doc.roundedRect(x,y,bw,48,6,6,"FD")}else doc.roundedRect(x,y,bw,48,6,6,"S");
+    font("normal",8,MUTED);doc.text(doc.splitTextToSize(l,bw-16)[0],x+8,y+15);font("bold",15,INK);doc.text(pdfMoney(v),x+8,y+37)});
+  y+=62;font("normal",10,MUTED);doc.text(`Paid in cash ${pdfMoney(t.c)}     Paid online ${pdfMoney(t.o)}${slipNo.size?`     ${plural(slipNo.size,"slip photo","slip photos")} at the end`:""}`,M,y);
+  y+=18;
+
+  // entries table
+  const cols=[{h:"Date",w:64},{h:"Item",w:84},{h:"Details",w:183},{h:"Paid by",w:76},{h:"Amount",w:72,r:true},{h:"Slip",w:CW-479}];
+  const head=()=>{doc.setFillColor(...TAPE);doc.rect(M,y,CW,18,"F");font("bold",9,[26,26,26]);let x=M;
+    cols.forEach(c=>{doc.text(c.h,c.r?x+c.w-4:x+4,y+12.5,c.r?{align:"right"}:undefined);x+=c.w});y+=18};
+  head();
+  for(const e of list){
+    const det=[e.qty?`${numfmt.format(e.qty)} ${e.unit||""}${e.rate?` @ ${pdfMoney(e.rate)}`:""}`:"",e.vendor||"",phoneOf(e),e.note||""].filter(Boolean).join(", ");
+    const paid=e.cash&&e.online?`Cash ${pdfMoney(e.cash)}\nOnline ${pdfMoney(e.online)}`:e.cash?"Cash":"Online";
+    const cells=[fdate(e.ts),itemName(e)||"Item not set",det,paid,pdfMoney(e.amount),slipNo.has(e.id)?`Slip ${slipNo.get(e.id)}`:""];
+    font("normal",9,INK);
+    const lines=cells.map((c,i)=>doc.splitTextToSize(pdfText(c),cols[i].w-8));
+    const h=Math.max(...lines.map(l=>l.length))*11+8;
+    if(y+h>BOTTOM){newPage();head()}
+    let x=M;
+    lines.forEach((l,i)=>{const c=cols[i];
+      if(i===4)font("bold",9,RED);else if(i===5)font("bold",9,[44,106,142]);else font("normal",9,i===2||i===3?MUTED:INK);
+      l.forEach((ln,j)=>doc.text(ln,c.r?x+c.w-4:x+4,y+12+j*11,c.r?{align:"right"}:undefined));x+=c.w});
+    y+=h;doc.setDrawColor(...RULE);doc.setLineWidth(.5);doc.line(M,y,M+CW,y);
+  }
+  if(y+24>BOTTOM)newPage();
+  doc.setDrawColor(...INK);doc.setLineWidth(1.2);doc.line(M,y+1,M+CW,y+1);
+  font("bold",11,INK);doc.text("Total",M+4,y+16);doc.text(pdfMoney(t.t),M+cols.slice(0,5).reduce((a,c)=>a+c.w,0)-4,y+16,{align:"right"});
+  y+=52;
+
+  // by item
+  const groups=byItem(list);
+  if(groups.length){
+    if(y+60>BOTTOM)newPage();
+    font("bold",13,INK);doc.text("By item",M,y);y+=8;
+    [...GROUPS.map(g=>g[0]),"none"].forEach(cat=>groups.filter(g=>g.cat===cat).forEach(g=>{
+      font("normal",9,MUTED);const q=doc.splitTextToSize(pdfText(`${cat==="none"?"":GNAME[cat]+". "}${plural(g.n,"entry","entries")}${g.qtext?". "+g.qtext:""}`),CW-110);
+      const h=16+q.length*11;if(y+h>BOTTOM)newPage();
+      font("bold",10,INK);doc.text(pdfText(g.name),M,y+14);doc.text(pdfMoney(g.amt),M+CW,y+14,{align:"right"});
+      font("normal",9,MUTED);q.forEach((l,j)=>doc.text(l,M,y+26+j*11));
+      y+=h+4;doc.setDrawColor(...RULE);doc.setLineWidth(.5);doc.line(M,y,M+CW,y);
+    }));
+  }
+
+  // slip photos, two per page
+  const withSlip=list.filter(e=>slipNo.has(e.id));
+  const slotH=(H-2*M-30)/2;let slot=2;
+  for(const e of withSlip){
+    const blob=await dbGet("slips",e.slipKey);if(!blob)continue;
+    if(slot===2){newPage();font("bold",13,INK);doc.text("Slip photos",M,y+4);y+=20;slot=0}
+    const top=y+slot*slotH;
+    font("bold",10,INK);doc.text(pdfText(`Slip ${slipNo.get(e.id)}   ${fdate(e.ts)}   ${itemName(e)||"Item not set"}   ${pdfMoney(e.amount)}`),M,top+10);
+    font("normal",9,MUTED);const sub=[e.vendor,phoneOf(e),e.note].filter(Boolean).join(", ");
+    if(sub)doc.text(doc.splitTextToSize(pdfText(sub),CW)[0],M,top+23);
+    const {w,h}=await imgSize(blob),boxW=CW,boxH=slotH-40;let iw=boxW,ih=iw*h/w;if(ih>boxH){ih=boxH;iw=ih*w/h}
+    doc.addImage(await blobToData(blob),/png/.test(blob.type)?"PNG":"JPEG",M+(boxW-iw)/2,top+30,iw,ih,undefined,"FAST");
+    slot++;
+  }
+
+  // page numbers
+  const n=doc.getNumberOfPages();
+  for(let i=1;i<=n;i++){doc.setPage(i);font("normal",8,MUTED);doc.text(pdfText(`${p.name}   page ${i} of ${n}`),W/2,H-18,{align:"center"})}
+  return{blob:doc.output("blob"),name:`property-estimates-${slug(p.name)}-${localDay()}.pdf`};
+}
+async function pdfClick(btn,list,opts){
+  if(!list.length){toast("No entries to export");return}
+  const label=btn.textContent;btn.disabled=true;btn.textContent="Preparing PDF…";
+  try{const x=await buildPdf(list,opts);await giveFile(x.name,x.blob)}
+  catch(err){console.error(err);toast(err&&err.message==="lib"?"Couldn’t load the PDF tool. Open the app once with internet, then try again.":"Couldn’t make the PDF. Try again.")}
+  btn.disabled=false;btn.textContent=label;
+}
+$("#pdf").addEventListener("click",()=>pdfClick($("#pdf"),LIVE,{title:"All entries"}));
+$("#bookpdf").addEventListener("click",()=>{const tags=filterTags().map(t=>t[0]);
+  pdfClick($("#bookpdf"),PB.list||[],{title:tags.length?"Passbook entries":"All entries",filters:tags.join(", ")})});
 
 /* ---------- backup + restore ---------- */
 $("#backup").addEventListener("click",async()=>{
