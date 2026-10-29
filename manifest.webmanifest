@@ -1,7 +1,7 @@
 {
-  "name": "Ghar ka Hisaab",
-  "short_name": "Hisaab",
-  "description": "Construction expense diary",
+  "name": "Property Estimates",
+  "short_name": "Estimates",
+  "description": "Construction expense diary for your house",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
