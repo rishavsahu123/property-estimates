@@ -1,5 +1,5 @@
 // Property Estimates offline cache. Bump V when you change any file so phones pick up the update.
-const V = "pe-v2.1.0";
+const V = "pe-v2.2.0";
 const FONTS = "ghk-fonts";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./exceljs.min.js", "./jspdf.umd.min.js", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
 

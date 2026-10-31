@@ -203,6 +203,62 @@ nav.tabs button[aria-current="page"]{color:var(--ink);font-weight:600}
 .viewer button{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;background:#fff;color:#111}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--card);padding:9px 16px;border-radius:999px;font-size:15px;z-index:90;max-width:90%;text-align:center}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(40px);opacity:.4}}}
+
+/* top bar menus */
+.topbar{position:relative}
+.ticons{display:flex;gap:6px;flex:none}
+.ibtn{width:38px;height:38px;border-radius:999px;border:1.5px solid var(--rule);background:var(--card);display:inline-flex;align-items:center;justify-content:center;padding:0}
+.ibtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ibtn[aria-expanded="true"]{border-color:var(--ink);background:var(--field)}
+.menu{position:absolute;right:0;top:46px;z-index:25;width:min(330px,calc(100vw - 28px));background:var(--card);border:1px solid var(--rule);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.2);padding:6px}
+.mi{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;border:0;background:none;border-radius:10px;padding:10px}
+.mi:hover,.mi:active{background:var(--field)}
+.mi svg{width:22px;height:22px;flex:none;stroke:var(--ink);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-top:2px}
+.mi b{display:block;font-weight:600}
+.mi small{display:block;font-size:13px;color:var(--muted);line-height:1.35}
+.minfo{padding:8px 10px 10px;font-size:14px;color:var(--muted);line-height:1.45}
+.minfo p{margin:0 0 10px}
+.minfo b{color:var(--ink);font-weight:600}
+
+/* select + receipt */
+.ck{display:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--muted);margin-top:5px;align-items:center;justify-content:center}
+.ck svg{width:14px;height:14px;stroke:var(--card);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.selecting .entry{grid-template-columns:22px 44px 1fr auto}
+.selecting .ck{display:flex}
+.selecting .entry[aria-pressed="true"]{background:var(--warn-bg);border-radius:8px}
+.selecting .entry[aria-pressed="true"] .ck{background:var(--ink);border-color:var(--ink)}
+.selbar{position:fixed;left:0;right:0;bottom:calc(62px + env(safe-area-inset-bottom,0px));z-index:21;padding:0 10px}
+.selbar>div{max-width:540px;margin:0 auto;background:var(--ink);color:var(--card);border-radius:14px;display:flex;align-items:center;gap:8px;padding:8px 6px 8px 14px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.selbar .grow{flex:1;font-size:13px;line-height:1.2;min-width:0}
+.selbar .num{display:block;font-size:24px}
+.selbar .go{border:0;background:var(--tape);color:var(--tape-ink);border-radius:10px;padding:10px 14px;font-weight:600;font-size:15px}
+.selbar .go:disabled{opacity:.5}
+.selbar .cl{border:0;background:transparent;color:var(--card);font-size:24px;width:38px;height:38px}
+body.selmode main{padding-bottom:170px}
+body.selmode .toast{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+.rprev{border:1px solid var(--rule);border-radius:10px;overflow:auto;max-height:52vh;background:#fff;margin-top:6px}
+.rprev img{display:block;width:100%}
+
+/* charts */
+.viz{--g1:#2a78d6;--g2:#eb6834;--g3:#1baf7a;--g4:#eda100;--grid:#E1E7E2}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .viz{--g1:#3987e5;--g2:#d95926;--g3:#199e70;--g4:#c98500;--grid:#2A343D}}
+:root[data-theme="dark"] .viz{--g1:#3987e5;--g2:#d95926;--g3:#199e70;--g4:#c98500;--grid:#2A343D}
+.gbar{display:flex;gap:2px;height:16px;margin:14px 0 10px}
+.gbar i{display:block;height:100%;border-radius:4px;min-width:4px}
+.lg{display:grid;grid-template-columns:12px 1fr auto 40px;gap:7px 8px;align-items:center;font-size:14px}
+.lg .sw{width:12px;height:12px;border-radius:3px}
+.lg .v{font-family:Teko,"Arial Narrow",sans-serif;font-size:21px;line-height:1;text-align:right}
+.lg .pc{color:var(--muted);font-size:13px;text-align:right}
+.chartwrap{position:relative;margin-top:6px;touch-action:pan-y}
+svg.mchart{display:block;width:100%;height:auto;overflow:visible}
+svg.mchart text{font-family:Hind,"Noto Sans",system-ui,sans-serif}
+.tip{position:absolute;top:0;pointer-events:none;background:var(--card);color:var(--ink);border:1px solid var(--rule);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.4;box-shadow:0 6px 18px rgba(0,0,0,.18);min-width:160px;z-index:3}
+.tip b{display:block;font-size:14px}
+.tip .r{display:grid;grid-template-columns:10px 1fr auto;gap:6px;align-items:center}
+.tip .sw{width:10px;height:10px;border-radius:2px}
+.mlegend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted);margin-top:8px}
+.mlegend span{display:inline-flex;align-items:center;gap:6px}
+.mlegend i{width:10px;height:10px;border-radius:2px;display:inline-block}
 </style>
 </head>
 <body>
@@ -210,7 +266,33 @@ nav.tabs button[aria-current="page"]{color:var(--ink);font-weight:600}
 <main>
   <div class="topbar">
     <button class="projbtn" id="projbtn" aria-label="Switch project"><span id="projname">Project</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
-    <span class="brand">Property Estimates</span>
+    <div class="ticons">
+      <button class="ibtn" id="m-down-b" aria-label="Download PDF, Excel or backup" aria-expanded="false" aria-controls="m-down"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></button>
+      <button class="ibtn" id="m-up-b" aria-label="Restore from backup" aria-expanded="false" aria-controls="m-up"><svg viewBox="0 0 24 24"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg></button>
+      <button class="ibtn" id="m-info-b" aria-label="About your data and settings" aria-expanded="false" aria-controls="m-info"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.6v.2"/></svg></button>
+    </div>
+    <div class="menu" id="m-down" hidden>
+      <button class="mi" id="pdf"><svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg><span><b>PDF with slip photos</b><small>All entries of this project. Opens on any phone.</small></span></button>
+      <button class="mi" id="excel"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M4 15h16M10 4v16"/></svg><span><b>Excel sheet</b><small>This project, slip photos inside the rows.</small></span></button>
+      <button class="mi" id="backup"><svg viewBox="0 0 24 24"><path d="M5 8h14v11H5zM3 4h18v4H3zM10 12h4"/></svg><span><b>Full backup</b><small>All projects and photos. Keep it on Google Drive or WhatsApp.</small></span></button>
+    </div>
+    <div class="menu" id="m-up" hidden>
+      <button class="mi" id="restorebtn"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg><span><b>Restore from backup</b><small>Pick a backup file. Adds its entries; nothing on this phone is removed.</small></span></button>
+      <input type="file" id="restorefile" accept=".json,application/json,text/plain" hidden>
+    </div>
+    <div class="menu" id="m-info" hidden>
+      <div class="minfo">
+        <p><b>Your data stays on this phone.</b> If you uninstall the app or clear Chrome’s data, it’s gone. Save a full backup from the download menu now and then.</p>
+        <p id="lastbackup"></p>
+        <p><b>PDF or Excel?</b> The PDF shows every slip photo and opens anywhere. Excel photos show in the Excel or WPS app, not in WhatsApp or Google Drive previews.</p>
+        <p><b>Restore</b> adds entries from a backup file and keeps everything already on this phone. A backup from the old Ghar ka Hisaab app works too.</p>
+        <p><b>Receipts:</b> in Passbook tap Select, pick entries, then Share receipt.</p>
+        <span class="lbl" style="margin-top:0">Appearance</span>
+        <div class="seg" role="group" aria-label="Theme" id="theme">
+          <button type="button" data-theme="auto">Auto</button><button type="button" data-theme="light">Light</button><button type="button" data-theme="dark">Dark</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <section id="v-add">
@@ -236,7 +318,7 @@ nav.tabs button[aria-current="page"]{color:var(--ink);font-weight:600}
 
   <section id="v-book" hidden>
     <div class="card">
-      <div class="phead" style="margin-bottom:10px"><h2 style="margin:0">Passbook</h2><button class="linkbtn" data-go="trash" id="trashlink">Trash</button></div>
+      <div class="phead" style="margin-bottom:10px"><h2 style="margin:0">Passbook</h2><span><button class="linkbtn" id="selall" hidden>Select all</button><button class="linkbtn" id="selbtn">Select</button><button class="linkbtn" data-go="trash" id="trashlink">Trash</button></span></div>
       <div class="tools">
         <button class="fbtn" id="openfilters"><svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filters <span class="badge" id="fcount" hidden></span></button>
         <select class="field" id="sort" aria-label="Sort by">
@@ -279,33 +361,31 @@ nav.tabs button[aria-current="page"]{color:var(--ink);font-weight:600}
   </section>
 
   <section id="v-sum" hidden>
-    <div class="card"><h2>Total cost</h2><div id="costsplit"></div></div>
+    <div class="card viz"><h2>Total cost</h2><div id="costsplit"></div>
+      <span class="lbl" style="margin-top:14px">Share of total</span>
+      <div class="gbar" id="gbar" role="img"></div><div class="lg" id="glegend"></div></div>
+    <div class="card viz">
+      <div class="phead"><h2 style="margin:0">Spending by month</h2><button class="linkbtn" id="mtoggle">Show table</button></div>
+      <div class="seg s2" role="group" aria-label="What to include" id="mmode" style="margin-top:10px"><button type="button" data-m="build">Building cost</button><button type="button" data-m="all">Everything</button></div>
+      <div class="chartwrap" id="mchart" style="margin-top:14px"></div>
+      <div class="mlegend" id="mlg"></div>
+      <div id="mtable" hidden></div>
+      <p class="hint" id="mnote"></p>
+    </div>
     <div class="card">
       <h2>Cash and online</h2>
       <div class="bar" id="mbar"></div>
       <div class="legend" id="mlegend"></div>
     </div>
     <div class="card"><h2>Where the money went</h2><div id="byitem"></div></div>
-    <div class="card">
-      <h2>Export and backup</h2>
-      <p class="pmeta" style="margin:0 0 4px">Your diary is stored only on this phone. If you uninstall the app or clear Chrome’s data, it’s gone. Save a backup to Google Drive or WhatsApp now and then.</p>
-      <p class="pmeta" id="lastbackup" style="margin:0"></p>
-      <button class="primary" id="pdf">Download PDF with slip photos</button>
-      <button class="second" id="excel">Download Excel for this project</button>
-      <p class="hint">The PDF opens on any phone and shows every slip photo. Excel photos show in the Excel or WPS app, but not in WhatsApp or Google Drive previews.</p>
-      <button class="second" id="backup">Save full backup</button>
-      <button class="second" id="restorebtn">Restore from backup</button>
-      <input type="file" id="restorefile" accept=".json,application/json,text/plain" hidden>
-    </div>
-    <div class="card">
-      <h2>Appearance</h2>
-      <div class="seg" role="group" aria-label="Theme" id="theme">
-        <button type="button" data-theme="auto">Auto</button><button type="button" data-theme="light">Light</button><button type="button" data-theme="dark">Dark</button>
-      </div>
-    </div>
   </section>
 </main>
 
+<div class="selbar" id="selbar" hidden><div>
+  <span class="grow"><span id="sel-n">0 selected</span><span class="num" id="sel-t">₹0</span></span>
+  <button class="go" id="sel-share">Share receipt</button>
+  <button class="cl" id="sel-x" aria-label="Stop selecting">×</button>
+</div></div>
 <nav class="tabs" aria-label="Sections"><div>
   <button data-go="add" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Add</button>
   <button data-go="book"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg>Passbook</button>
@@ -449,7 +529,7 @@ async function upsertContact(name,phone){
 }
 function backupNote(){
   const last=lget("ghk-backup",0),n=LIVE.length;
-  $("#status").textContent=!n?"Everything is saved only on this phone.":last?`Saved on this phone. Last backup ${fdate(last)}.`:"Saved on this phone. No backup yet, save one from Summary.";
+  $("#status").textContent=!n?"Everything is saved only on this phone.":last?`Saved on this phone. Last backup ${fdate(last)}.`:"Saved on this phone. No backup yet, save one from the download button at the top.";
   $("#lastbackup").textContent=last?`Last backup: ${fdate(last)}`:"No backup taken yet.";
 }
 
@@ -563,7 +643,7 @@ function makeForm(root,{entry,onDone}){
       <button type="button" class="linkbtn" data-f="rmslip" hidden>Remove photo</button>
     </div>
     <button type="button" class="primary" data-f="save">${editing?"Save changes":"Save entry"}</button>
-    ${editing?'<button type="button" class="danger" data-f="del">Move to trash</button>':""}`;
+    ${editing?'<button type="button" class="second" data-f="share">Share receipt</button><button type="button" class="danger" data-f="del">Move to trash</button>':""}`;
   const f=n=>root.querySelector(`[data-f="${n}"]`);
   const amount=f("amount"),qty=f("qty"),rate=f("rate"),unit=f("unit"),cash=f("cash"),vendor=f("vendor"),phone=f("phone");
 
@@ -662,6 +742,7 @@ function makeForm(root,{entry,onDone}){
       btn.disabled=false;btn.textContent=editing?"Save changes":"Save entry";
     }
   });
+  if(editing)f("share").addEventListener("click",()=>openReceipt([entry.id]));
   if(editing)f("del").addEventListener("click",async()=>{
     try{await trashIt(entry);toast("Moved to trash");onDone&&onDone()}catch{toast("Couldn’t move to trash. Try again.")}
   });
@@ -676,14 +757,15 @@ function openEdit(id){
 }
 
 /* ---------- rows ---------- */
-function rowHTML(e,bal){
+function rowHTML(e,bal,sel){
   const d=new Date(e.ts),name=itemName(e),bits=[];
   if(e.qty)bits.push(`${numfmt.format(e.qty)} ${esc(e.unit||"")}${e.rate?` @ ${money(e.rate)}`:""}`);
   if(e.vendor)bits.push(esc(e.vendor));
   if(e.note)bits.push(esc(e.note));
   const mode=e.cash&&e.online?`<span class="tag cash">Cash ${money(e.cash)}</span><br><span class="tag online">Online ${money(e.online)}</span>`
     :e.cash?'<span class="tag cash">Cash</span>':'<span class="tag online">Online</span>';
-  return `<li><button class="entry" data-id="${esc(e.id)}">
+  return `<li><button class="entry" data-id="${esc(e.id)}"${sel==null?"":` aria-pressed="${!!sel}"`}>
+    <span class="ck" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
     <span class="dt"><span class="d">${d.getDate()}</span><span class="m">${MON[d.getMonth()]} ${String(d.getFullYear()).slice(2)}</span></span>
     <span class="part"><span class="t">${name?esc(name):'<span class="missing">Set item</span>'}</span>
       <span class="s" style="display:block">${bits.join(", ")}</span>
@@ -800,11 +882,16 @@ function renderBook(){
   $("#b-total").textContent=money(t.t);$("#b-cash").textContent=money(t.c);$("#b-online").textContent=money(t.o);
   $("#b-count").textContent=list.length?`${plural(list.length,"entry","entries")}${s.startsWith("date")?". Running total shown under each amount.":""}`:"";
   const showBal=s.startsWith("date");
-  $("#book").innerHTML=list.length?list.slice(0,PB.limit).map(e=>rowHTML(e,showBal?run[e.id]:null)).join("")
+  $("#book").classList.toggle("selecting",!!PB.sel);
+  $("#book").innerHTML=list.length?list.slice(0,PB.limit).map(e=>rowHTML(e,showBal?run[e.id]:null,PB.sel?PB.sel.has(e.id):null)).join("")
     :`<li class="empty">${LIVE.length?"No entries match these filters.":"No entries yet. Add your first payment from the Add tab."}</li>`;
   $("#bookmore").hidden=list.length<=PB.limit;
-  PB.list=list;$("#bookpdf").hidden=!list.length;
-  bindRows($("#book"));
+  PB.list=list;$("#bookpdf").hidden=!list.length||!!PB.sel;
+  $$(".entry",$("#book")).forEach(b=>b.addEventListener("click",()=>{
+    if(!PB.sel){openEdit(b.dataset.id);return}
+    const id=b.dataset.id;if(PB.sel.has(id))PB.sel.delete(id);else PB.sel.add(id);
+    b.setAttribute("aria-pressed",String(PB.sel.has(id)));paintSel()}));
+  paintSel();
 }
 
 /* ---------- people ---------- */
@@ -910,8 +997,9 @@ function renderSummary(){
     html+=gs.map(g=>`<div class="trow"><span>${esc(g.name)}</span><span class="num">${money(g.amt)}</span><span class="s">${plural(g.n,"entry","entries")}${g.qtext?". "+esc(g.qtext):""}</span></div>`).join("");
   });
   $("#byitem").innerHTML=html||'<p class="empty">Totals appear here once you add entries.</p>';
-  $$("#theme button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.theme===lget("pe-theme","auto"))));
+  renderGroupBar(es,t.t);renderMonthly(es);
 }
+const paintTheme=()=>$$("#theme button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.theme===lget("pe-theme","auto"))));
 function byItem(es){
   const m=new Map();
   es.forEach(e=>{const k=e.item||"none";const g=m.get(k)||{name:itemName(e)||"Item not set",cat:groupOf(e),amt:0,n:0,q:{}};
@@ -920,7 +1008,7 @@ function byItem(es){
     g.qtext=u.map(x=>`${numfmt.format(g.q[x])} ${x}${u.length===1&&g.q[x]?`, average ${money(g.amt/g.q[x])} per ${perUnit(x)}`:""}`).join("; ");return g}).sort((a,b)=>b.amt-a.amt);
 }
 $$("#theme button").forEach(b=>b.addEventListener("click",()=>{const t=b.dataset.theme;lset("pe-theme",t);
-  if(t==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t);renderSummary()}));
+  if(t==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",t);paintTheme()}));
 
 /* ---------- home ---------- */
 function renderHome(){
@@ -954,6 +1042,8 @@ $("#emptytrash").addEventListener("click",async()=>{
 const VIEWS=["add","book","people","sum","trash"];
 function go(v){
   if(!VIEWS.includes(v))v="add";
+  if(v!=="book"&&PB.sel){PB.sel=null;paintSel()}
+  closeMenus();
   VIEWS.forEach(k=>$("#v-"+k).hidden=k!==v);
   const tab=v==="trash"?"book":v;
   $$("nav.tabs button").forEach(b=>{if(b.dataset.go===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
@@ -1040,13 +1130,11 @@ async function buildExcel(){
   const buf=await wb.xlsx.writeBuffer();
   return{blob:new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),name:`property-estimates-${slug(p.name)}-${localDay()}.xlsx`,rows:list.length,slips};
 }
-$("#excel").addEventListener("click",async()=>{
-  const btn=$("#excel");if(!LIVE.length){toast("No entries to export yet");return}
-  btn.disabled=true;btn.textContent="Preparing Excel…";
+$("#excel").addEventListener("click",()=>task("Preparing Excel…",async()=>{
+  if(!LIVE.length){toast("No entries to export yet");return}
   try{const x=await buildExcel();await giveFile(x.name,x.blob)}
   catch(err){console.error(err);toast(err&&err.message==="lib"?"Couldn’t load the Excel tool. Open the app once with internet, then try again.":"Couldn’t make the Excel file. Try again.")}
-  btn.disabled=false;btn.textContent="Download Excel for this project";
-});
+}));
 
 /* ---------- PDF with slip photos ---------- */
 const pdfMoney=n=>"Rs "+numfmt.format(round2(+n||0));
@@ -1141,18 +1229,227 @@ async function buildPdf(list,{title,filters}){
 }
 async function pdfClick(btn,list,opts){
   if(!list.length){toast("No entries to export");return}
-  const label=btn.textContent;btn.disabled=true;btn.textContent="Preparing PDF…";
+  const label=btn&&btn.textContent;if(btn){btn.disabled=true;btn.textContent="Preparing PDF…"}
   try{const x=await buildPdf(list,opts);await giveFile(x.name,x.blob)}
   catch(err){console.error(err);toast(err&&err.message==="lib"?"Couldn’t load the PDF tool. Open the app once with internet, then try again.":"Couldn’t make the PDF. Try again.")}
-  btn.disabled=false;btn.textContent=label;
+  if(btn){btn.disabled=false;btn.textContent=label}
 }
-$("#pdf").addEventListener("click",()=>pdfClick($("#pdf"),LIVE,{title:"All entries"}));
+$("#pdf").addEventListener("click",()=>task("Preparing PDF…",()=>pdfClick(null,LIVE,{title:"All entries"})));
 $("#bookpdf").addEventListener("click",()=>{const tags=filterTags().map(t=>t[0]);
   pdfClick($("#bookpdf"),PB.list||[],{title:tags.length?"Passbook entries":"All entries",filters:tags.join(", ")})});
 
+/* ---------- top bar menus ---------- */
+const MENUS=[["m-down-b","m-down"],["m-up-b","m-up"],["m-info-b","m-info"]];
+function closeMenus(except){MENUS.forEach(([b,m])=>{if(m!==except){$("#"+m).hidden=true;$("#"+b).setAttribute("aria-expanded","false")}})}
+MENUS.forEach(([b,m])=>$("#"+b).addEventListener("click",ev=>{ev.stopPropagation();const open=$("#"+m).hidden;closeMenus(m);
+  $("#"+m).hidden=!open;$("#"+b).setAttribute("aria-expanded",String(open));if(open&&m==="m-info"){backupNote();paintTheme()}}));
+document.addEventListener("click",ev=>{if(!ev.target.closest(".menu"))closeMenus()});
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape")closeMenus()});
+let busy=false;
+async function task(msg,fn){if(busy){toast("Still working, please wait…");return}busy=true;closeMenus();toast(msg);try{await fn()}finally{busy=false}}
+
+/* ---------- select entries in passbook ---------- */
+function paintSel(){
+  const on=!!PB.sel;document.body.classList.toggle("selmode",on);
+  $("#selbar").hidden=!on;$("#selbtn").textContent=on?"Done":"Select";$("#selall").hidden=!on;
+  if(!on)return;
+  const es=LIVE.filter(e=>PB.sel.has(e.id));
+  $("#sel-n").textContent=es.length?`${es.length} selected`:"Tap entries to select";
+  $("#sel-t").textContent=money(sums(es).t);$("#sel-share").disabled=!es.length;
+}
+$("#selbtn").addEventListener("click",()=>{PB.sel=PB.sel?null:new Set();renderBook()});
+$("#selall").addEventListener("click",()=>{if(!PB.sel)return;const ids=(PB.list||[]).map(e=>e.id);
+  const all=ids.every(id=>PB.sel.has(id));ids.forEach(id=>all?PB.sel.delete(id):PB.sel.add(id));renderBook()});
+$("#sel-x").addEventListener("click",()=>{PB.sel=null;renderBook()});
+$("#sel-share").addEventListener("click",()=>{if(PB.sel&&PB.sel.size)openReceipt([...PB.sel])});
+
+/* ---------- receipt image ---------- */
+const personOf=e=>e.contactId?"c:"+e.contactId:personKey(e)?"n:"+personKey(e):"";
+async function makeReceipt(sel,{history,slips}){
+  try{await document.fonts.ready}catch{}
+  const S=1080,P=64,CWr=S-2*P,c=document.createElement("canvas"),g=c.getContext("2d");
+  const K={paper:"#FFFFFF",ink:"#1C2B3A",muted:"#5D6B77",rule:"#D5DCD6",tape:"#F2B705",dark:"#1A1A1A",hl:"#FFF4CC",red:"#A3312A",cash:"#4F7A2E",online:"#2C6A8E"};
+  const TX='Hind, "Noto Sans", "Noto Sans Devanagari", system-ui, sans-serif',NUM='Teko, "Arial Narrow", sans-serif';
+  const font=(w,sz,fam=TX)=>`${w} ${sz}px ${fam}`;
+  const wrapT=(t,f,maxW)=>{g.font=f;const out=[];let cur="";for(const w of String(t||"").split(/\s+/).filter(Boolean)){const n=cur?cur+" "+w:w;if(cur&&g.measureText(n).width>maxW){out.push(cur);cur=w}else cur=n}if(cur)out.push(cur);return out.length?out:[""]};
+  const ops=[];let y=0;
+  const text=(t,x,yy,f,col,al="left")=>ops.push(()=>{g.font=f;g.fillStyle=col;g.textAlign=al;g.textBaseline="alphabetic";g.fillText(t,x,yy)});
+  const box=(x,yy,w,h,col)=>ops.push(()=>{g.fillStyle=col;g.fillRect(x,yy,w,h)});
+  const line=(yy,col=K.rule,w=2)=>ops.push(()=>{g.fillStyle=col;g.fillRect(P,yy,CWr,w)});
+  const stripe=yy=>ops.push(()=>{g.save();g.beginPath();g.rect(0,yy,S,18);g.clip();g.fillStyle=K.tape;g.fillRect(0,yy,S,18);g.fillStyle=K.dark;
+    for(let x=-40;x<S+40;x+=48){g.beginPath();g.moveTo(x,yy);g.lineTo(x+24,yy);g.lineTo(x+6,yy+18);g.lineTo(x-18,yy+18);g.closePath();g.fill()}g.restore()});
+  const p=proj(),es=[...sel].sort((a,b)=>a.ts-b.ts),t=sums(es),first=es[0],last=es[es.length-1];
+  const pk=personOf(first),single=!!pk&&es.every(e=>personOf(e)===pk);
+  const ct=single&&first.contactId?CM.get(first.contactId):null,who=single?(ct?.name||first.vendor):"",phone=ct?.phone||"";
+  const modeTxt=e=>e.cash&&e.online?`Cash ${money(e.cash)} + Online ${money(e.online)}`:e.cash?"Cash":"Online";
+
+  stripe(0);y=100;
+  text("PAYMENT RECEIPT",P,y,font(600,26),K.muted);text(p.name,S-P,y,font(500,26),K.muted,"right");
+  if(single){y+=62;text("Paid to",P,y,font(400,28),K.muted);
+    for(const l of wrapT(who,font(600,54),CWr)){y+=62;text(l,P,y,font(600,54),K.ink)}
+    if(phone){y+=44;text(phone,P,y,font(400,30),K.muted)}}
+  y+=single?70:80;
+  const when=es.length===1?`Paid on ${fdate(first.ts)}`:`${plural(es.length,"payment","payments")}, ${fdate(first.ts)} to ${fdate(last.ts)}`;
+  text(when,P,y,font(400,30),K.muted);
+  y+=150;text(money(t.t),P-4,y,font(500,170,NUM),K.ink);
+  y+=52;text(t.c&&t.o?`Cash ${money(t.c)}   ·   Online ${money(t.o)}`:t.c?"Paid in cash":"Paid online",P,y,font(500,30),K.ink);
+  y+=40;line(y);y+=4;
+
+  // details of the selected payments
+  for(const e of es){
+    const bits=[e.qty?`${numfmt.format(e.qty)} ${e.unit||""}${e.rate?` @ ${money(e.rate)}`:""}`:"",!single&&e.vendor?e.vendor:"",e.note||"",es.length>1?modeTxt(e):""].filter(Boolean).join(" · ");
+    const sub=bits?wrapT(bits,font(400,27),CWr-260):[];
+    y+=58;text(itemName(e)||"Payment",P,y,font(600,34),K.ink);text(money(e.amount),S-P,y,font(500,52,NUM),K.ink,"right");
+    if(es.length>1){y+=36;text(fdate(e.ts),P,y,font(400,26),K.muted)}
+    for(const l of sub){y+=36;text(l,P,y,font(400,27),K.muted)}
+    if(e.slipKey){y+=36;text("Slip photo attached",P,y,font(500,24),K.online)}
+    y+=24;line(y);
+  }
+
+  // account history for the same person
+  if(history&&single){
+    const maxTs=last.ts,selIds=new Set(es.map(e=>e.id));
+    const hist=LIVE.filter(e=>personOf(e)===pk&&e.ts<=maxTs).sort((a,b)=>a.ts-b.ts),ht=sums(hist);
+    if(hist.length>es.length){
+    y+=78;for(const l of wrapT(`All payments to ${who} till ${fdate(maxTs)}`,font(600,36),CWr)){text(l,P,y,font(600,36),K.ink);y+=46}
+    y-=8;text(`${plural(hist.length,"payment","payments")}   ·   Cash ${money(ht.c)}   ·   Online ${money(ht.o)}`,P,y,font(400,27),K.muted);
+    y+=28;
+    const cx=[P+14,P+196,S-P-450,S-P-196,S-P-14];
+    box(P,y,CWr,52,K.tape);
+    [["Date",0,"left"],["Item",1,"left"],["Paid by",2,"left"],["Amount",3,"right"],["Total so far",4,"right"]].forEach(([h,i,al])=>text(h,cx[i],y+35,font(600,25),K.dark,al));
+    y+=52;let run=0;
+    for(const e of hist){
+      run+=+e.amount||0;
+      const il=wrapT(itemName(e)||"Payment",font(400,27),cx[2]-cx[1]-16).slice(0,2),h=Math.max(1,il.length)*34+20;
+      if(selIds.has(e.id))box(P,y,CWr,h,K.hl);
+      text(fdate(e.ts),cx[0],y+40,font(400,26),K.ink);
+      il.forEach((l,j)=>text(l,cx[1],y+40+j*34,font(selIds.has(e.id)?600:400,27),K.ink));
+      text(e.cash&&e.online?"Both":e.cash?"Cash":"Online",cx[2],y+40,font(400,26),K.muted);
+      text(money(e.amount),cx[3],y+40,font(500,34,NUM),K.ink,"right");
+      text(money(run),cx[4],y+40,font(500,34,NUM),K.muted,"right");
+      y+=h;line(y,K.rule,1);
+    }
+    y+=2;line(y,K.ink,3);y+=50;
+    text("Total paid",P+14,y,font(600,30),K.ink);text(money(ht.t),S-P-14,y,font(500,48,NUM),K.ink,"right");
+    y+=10;
+    }else{y+=50;text(`This is the first payment to ${who}.`,P,y,font(400,27),K.muted)}
+  }
+  const slipN=slips?es.filter(e=>e.slipKey).length:0;
+  y+=70;text(`Made on ${fdate(Date.now())} with Property Estimates${slipN?`  ·  ${plural(slipN,"slip photo","slip photos")} sent with this receipt`:""}`,S/2,y,font(400,23),K.muted,"center");
+  y+=44;stripe(y);y+=18;
+
+  c.width=S;c.height=Math.ceil(y);g.fillStyle=K.paper;g.fillRect(0,0,c.width,c.height);ops.forEach(f=>f());
+  const blob=await new Promise(r=>c.toBlob(r,"image/png"));
+  return{blob,single,who,total:t.t,first,last,count:es.length};
+}
+function openReceipt(ids){
+  const es=LIVE.filter(e=>ids.includes(e.id));if(!es.length){toast("Pick at least one entry");return}
+  const pk=personOf(es[0]),single=!!pk&&es.every(e=>personOf(e)===pk);
+  const slips=es.filter(e=>e.slipKey);
+  const opt={history:single,slips:slips.length>0};
+  const s=openSheet("Share receipt",`
+    ${single?`<label class="check"><input type="checkbox" id="rc-h" checked>Add all past payments to this person below</label>`:`<p class="hint" style="margin-top:0">These entries are for different shops or people, so past payments are not added. Pick entries of one person to include their full history.</p>`}
+    ${slips.length?`<label class="check"><input type="checkbox" id="rc-s" checked>Send ${plural(slips.length,"slip photo","slip photos")} with it</label>`:""}
+    <div class="rprev"><img id="rc-img" alt="Receipt preview"></div>
+    <button class="primary" id="rc-share" disabled>Share receipt</button>
+    <button class="second" id="rc-save" disabled>Save image</button>`);
+  let cur=null,url=null;
+  const build=async()=>{
+    $("#rc-share",s.body).disabled=$("#rc-save",s.body).disabled=true;
+    try{cur=await makeReceipt(es,opt);if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(cur.blob);$("#rc-img",s.body).src=url}
+    catch(err){console.error(err);toast("Couldn’t make the receipt.")}
+    $("#rc-share",s.body).disabled=$("#rc-save",s.body).disabled=!cur;
+  };
+  const h=$("#rc-h",s.body),sl=$("#rc-s",s.body);
+  if(h)h.addEventListener("change",()=>{opt.history=h.checked;build()});
+  if(sl)sl.addEventListener("change",()=>{opt.slips=sl.checked;build()});
+  const fname=()=>`receipt-${slug(cur.who||proj().name)}-${localDay(new Date(cur.last.ts))}.png`;
+  $("#rc-share",s.body).addEventListener("click",async()=>{
+    if(!cur)return;
+    const files=[new File([cur.blob],fname(),{type:"image/png"})];
+    if(opt.slips)for(const [i,e] of es.filter(e=>e.slipKey).entries()){const b=await dbGet("slips",e.slipKey);if(b)files.push(new File([b],`slip-${i+1}-${localDay(new Date(e.ts))}.jpg`,{type:b.type||"image/jpeg"}))}
+    const msg=`Payment receipt: ${money(cur.total)}${cur.who?` to ${cur.who}`:""}, ${cur.count===1?fdate(cur.first.ts):`${fdate(cur.first.ts)} to ${fdate(cur.last.ts)}`}.`;
+    if(navigator.canShare&&navigator.canShare({files})){
+      try{await navigator.share({files,title:"Payment receipt",text:msg});return}catch(e){if(e&&e.name==="AbortError")return}
+    }
+    await giveFile(fname(),cur.blob);toast("Receipt image saved. Share it from your Downloads.");
+  });
+  $("#rc-save",s.body).addEventListener("click",()=>{if(!cur)return;const a=document.createElement("a");a.href=url;a.download=fname();document.body.appendChild(a);a.click();a.remove();toast("Receipt image saved")});
+  s.onClose=()=>{if(url)setTimeout(()=>URL.revokeObjectURL(url),1000)};
+  build();
+}
+
+/* ---------- summary charts ---------- */
+const VG=[["material","Material","var(--g1)"],["people","People","var(--g2)"],["land","Land and documents","var(--g3)"],["other","Other","var(--g4)"]];
+const vgOf=e=>{const g=groupOf(e);return g==="none"?"other":g};
+const compact=n=>{const a=Math.abs(n);return a>=1e7?"₹"+numfmt.format(Math.round(n/1e5)/100)+" Cr":a>=1e5?"₹"+numfmt.format(Math.round(n/1e4)/10)+" L":a>=1e3?"₹"+numfmt.format(Math.round(n/100)/10)+"k":"₹"+numfmt.format(Math.round(n))};
+function renderGroupBar(es,total){
+  const by=Object.fromEntries(VG.map(g=>[g[0],0]));es.forEach(e=>by[vgOf(e)]+=+e.amount||0);
+  const shown=VG.filter(g=>by[g[0]]>0);
+  $("#gbar").innerHTML=shown.map(g=>`<i style="flex:${by[g[0]]} 1 0;background:${g[2]}"></i>`).join("");
+  $("#gbar").setAttribute("aria-label","Share of total: "+VG.map(g=>`${g[1]} ${money(by[g[0]])}`).join(", "));
+  $("#gbar").hidden=!total;
+  $("#glegend").innerHTML=VG.map(g=>`<span class="sw" style="background:${g[2]}"></span><span>${g[1]}</span><span class="v">${money(by[g[0]])}</span><span class="pc">${total?Math.round(by[g[0]]/total*100)+"%":"–"}</span>`).join("");
+}
+function monthRows(es){
+  if(!es.length)return[];
+  let lo=Infinity,hi=-Infinity;es.forEach(e=>{lo=Math.min(lo,e.ts);hi=Math.max(hi,e.ts)});
+  const a=new Date(lo),b=new Date(Math.max(hi,Date.now())),out=[];
+  for(let y=a.getFullYear(),m=a.getMonth();y<b.getFullYear()||(y===b.getFullYear()&&m<=b.getMonth());m===11?(m=0,y++):m++)
+    out.push({y,m,g:{material:0,people:0,land:0,other:0},t:0,n:0});
+  const base=a.getFullYear()*12+a.getMonth();
+  es.forEach(e=>{const d=new Date(e.ts),o=out[d.getFullYear()*12+d.getMonth()-base];const v=+e.amount||0;o.g[vgOf(e)]+=v;o.t+=v;o.n++});
+  return out;
+}
+const niceMax=v=>{if(v<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(v))),f=v/p;return(f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p};
+let hideTip=null;document.addEventListener("click",()=>{if(hideTip)hideTip()});
+const rrTop=(x,y,w,h,r)=>`M${x},${y+h}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h}Z`;
+let MMODE=lget("pe-mmode","build");
+function renderMonthly(src){
+  $$("#mmode button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.m===MMODE)));
+  const es=MMODE==="build"?src.filter(e=>vgOf(e)!=="land"):src,VGm=MMODE==="build"?VG.filter(g=>g[0]!=="land"):VG;
+  const all=monthRows(es),ms=all.slice(-12),wrap=$("#mchart");
+  $("#mtoggle").hidden=!ms.length;
+  if(!ms.length){wrap.innerHTML=`<p class="empty">${src.length?"No building spending yet.":"The chart appears once you add entries."}</p>`;$("#mtable").innerHTML="";$("#mlg").innerHTML="";$("#mnote").textContent="";return}
+  const W=360,H=214,L=44,R=6,T=16,B=34,pw=W-L-R,ph=H-T-B,max=niceMax(Math.max(...ms.map(m=>m.t)));
+  const band=pw/ms.length,bw=Math.max(6,Math.min(28,band*.62)),peak=ms.reduce((a,m,i)=>m.t>ms[a].t?i:a,0);
+  let svg=`<svg class="mchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Spending by month, ${ms.map(m=>`${MON[m.m]} ${m.y}: ${money(m.t)}`).join(", ")}">`;
+  for(let i=0;i<=4;i++){const yy=T+ph-ph*i/4;svg+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="var(--grid)" stroke-width="1"/><text x="${L-6}" y="${yy+3.5}" text-anchor="end" font-size="10" fill="var(--muted)">${i?compact(max*i/4):"₹0"}</text>`}
+  ms.forEach((m,i)=>{
+    const cx=L+band*i+band/2,x=cx-bw/2;let yy=T+ph;
+    const segs=VGm.filter(g=>m.g[g[0]]>0);
+    segs.forEach((g,j)=>{const h=m.g[g[0]]/max*ph;yy-=h;
+      if(j===segs.length-1)svg+=`<path d="${rrTop(x,yy,bw,Math.max(h,1),Math.min(4,bw/2,Math.max(h,1)))}" fill="${g[2]}"/>`;
+      else if(h>2.5)svg+=`<rect x="${x}" y="${yy+2}" width="${bw}" height="${h-2}" fill="${g[2]}"/>`;});
+    if(i===peak&&m.t>0)svg+=`<text x="${cx}" y="${Math.max(yy-5,9)}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--ink)">${compact(m.t)}</text>`;
+    const showLbl=ms.length<=8||i%2===(ms.length-1)%2;
+    if(showLbl)svg+=`<text x="${cx}" y="${T+ph+14}" text-anchor="middle" font-size="10" fill="var(--muted)">${MON[m.m]}</text>`;
+    if(i===0||m.m===0)svg+=`<text x="${cx}" y="${T+ph+27}" text-anchor="middle" font-size="9" fill="var(--muted)">${m.y}</text>`;
+    svg+=`<rect class="hit" data-i="${i}" x="${L+band*i}" y="${T}" width="${band}" height="${ph+B-4}" fill="transparent"/>`;
+  });
+  svg+=`<line x1="${L}" x2="${W-R}" y1="${T+ph}" y2="${T+ph}" stroke="var(--muted)" stroke-width="1"/></svg><div class="tip" hidden></div>`;
+  wrap.innerHTML=svg;
+  const tip=$(".tip",wrap),sv=$("svg",wrap);
+  let shown=-1;
+  const show=i=>{const m=ms[i];shown=i;
+    tip.innerHTML=`<b>${MON[m.m]} ${m.y}: ${money(m.t)}</b>${VGm.filter(g=>m.g[g[0]]>0).map(g=>`<div class="r"><span class="sw" style="background:${g[2]}"></span><span>${g[1]}</span><span>${money(m.g[g[0]])}</span></div>`).join("")||'<div>No spending</div>'}`;
+    tip.hidden=false;const k=wrap.clientWidth/W,cx=(L+band*i+band/2)*k,tw=tip.offsetWidth;
+    tip.style.left=Math.max(0,Math.min(wrap.clientWidth-tw,cx-tw/2))+"px";tip.style.top="-8px";tip.style.transform="translateY(-100%)";
+    $$(".hit",sv).forEach(r=>r.setAttribute("fill",+r.dataset.i===i?"rgba(127,127,127,.12)":"transparent"))};
+  const hide=()=>{tip.hidden=true;shown=-1;$$(".hit",sv).forEach(r=>r.setAttribute("fill","transparent"))};
+  $$(".hit",sv).forEach(r=>{r.addEventListener("click",ev=>{ev.stopPropagation();const i=+r.dataset.i;if(!tip.hidden&&shown===i&&ev.pointerType!=="mouse")hide();else show(i)});
+    r.addEventListener("pointerenter",ev=>{if(ev.pointerType==="mouse")show(+r.dataset.i)})});
+  sv.addEventListener("pointerleave",ev=>{if(ev.pointerType==="mouse")hide()});
+  hideTip=hide;
+  $("#mlg").innerHTML=VGm.map(g=>`<span><i style="background:${g[2]}"></i>${g[1]}</span>`).join("");
+  $("#mtable").innerHTML=[...all].reverse().map(m=>`<div class="trow"><span>${MON[m.m]} ${m.y}</span><span class="num">${money(m.t)}</span><span class="s">${m.n?VGm.filter(g=>m.g[g[0]]>0).map(g=>`${g[1]} ${money(m.g[g[0]])}`).join(" · "):"No spending"}</span></div>`).join("");
+  $("#mnote").textContent=(all.length>12?"Showing the last 12 months. The table has every month. ":"")+(MMODE==="build"?"Land and documents are left out. ":"")+"Tap a bar to see the split.";
+}
+$$("#mmode button").forEach(b=>b.addEventListener("click",()=>{MMODE=b.dataset.m;lset("pe-mmode",MMODE);renderMonthly(LIVE)}));
+$("#mtoggle").addEventListener("click",()=>{const t=$("#mtable");t.hidden=!t.hidden;$("#mtoggle").textContent=t.hidden?"Show table":"Show chart";$("#mchart").hidden=!t.hidden;$("#mlg").hidden=!t.hidden});
+
 /* ---------- backup + restore ---------- */
-$("#backup").addEventListener("click",async()=>{
-  const btn=$("#backup");btn.disabled=true;btn.textContent="Preparing backup…";
+$("#backup").addEventListener("click",()=>task("Preparing backup…",async()=>{
   try{
     const slips={};
     for(const e of D.entries){if(e.slipKey&&!slips[e.slipKey]){const b=await dbGet("slips",e.slipKey);if(b)slips[e.slipKey]=await blobToData(b)}}
@@ -1160,9 +1457,8 @@ $("#backup").addEventListener("click",async()=>{
     const ok=await giveFile(`property-estimates-backup-${localDay()}.json`,new Blob([data],{type:"application/json"}));
     if(ok){lset("ghk-backup",Date.now());backupNote();toast("Backup ready")}
   }catch(err){console.error(err);toast("Couldn’t make the backup. Try again.")}
-  btn.disabled=false;btn.textContent="Save full backup";
-});
-$("#restorebtn").addEventListener("click",()=>$("#restorefile").click());
+}));
+$("#restorebtn").addEventListener("click",()=>{closeMenus();$("#restorefile").click()});
 $("#restorefile").addEventListener("change",async ev=>{
   const file=ev.target.files[0];ev.target.value="";if(!file)return;
   const bad="That file isn’t a Property Estimates backup.";
