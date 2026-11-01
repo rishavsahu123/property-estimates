@@ -10,7 +10,7 @@ Planned for Google Play / App Store later with a subscription (see roadmap.md).
 ## Files
 - `index.html` — the whole app: HTML, CSS and JS in one file, no framework, no build step.
 - `sw.js` — service worker: cache-first for the app shell, network-first for index.html.
-  **Bump `const V` on every change to any file** (currently pe-v2.9.0).
+  **Bump `const V` on every change to any file** (currently pe-v2.9.2).
 - `manifest.webmanifest` — name "Property Estimates", short name "Estimates".
 - `exceljs.min.js` (ExcelJS 4.4.0) and `jspdf.umd.min.js` (jsPDF 2.5.2) — loaded lazily, cached by the SW.
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`.

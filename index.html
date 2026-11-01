@@ -365,6 +365,13 @@ svg.mchart text{font-family:Hind,"Noto Sans",system-ui,sans-serif}
 .dnums b{display:block;font-size:22px;color:var(--ink);font-weight:500}
 .num.over,.dnums b.over{color:var(--debit)}
 #deals .sumstrip .num{font-size:21px}
+.dpays{margin-top:10px;border-top:1px solid var(--rule);padding-top:8px}
+.dpays .pg-l{margin:0 0 2px}
+.book.mini .entry{padding:8px 0;grid-template-columns:40px 1fr auto;gap:8px}
+.book.mini .dt .d{font-size:22px}
+.book.mini .amt .num{font-size:20px}
+.book.mini .w,.book.mini .bal{display:none}
+.dnone{font-size:13px;color:var(--muted);margin:10px 0 0}
 .dterms{margin:8px 0 0;display:grid;gap:2px;font-size:13px}
 .dterms>div{display:flex;gap:6px}
 .dterms dt{color:var(--muted);flex:none}
@@ -712,7 +719,7 @@ async function purge(e){await dbDel("entries",e.id);D.entries=D.entries.filter(x
 /* deals: fixed amount or rate × quantity, paid off in parts */
 const projDeals=()=>D.deals.filter(d=>d.projectId===D.pid);
 // deal = your own fields (label + value). "calc" multiplies the number fields switched to ×; "fixed" uses amount.
-const numVal=v=>{const t=String(v??"").replace(/[₹,\s]/g,"");return /^\d+(\.\d+)?$/.test(t)?parseFloat(t):null};
+const numVal=v=>{const t=String(v??"").trim().replace(/^(₹|rs\.?|inr)\s*/i,"").replace(/,/g,"");const m=t.match(/^(\d+(?:\.\d+)?|\.\d+)(\s*[^\d.].*)?$/i);return m?parseFloat(m[1]):null};
 const fieldsOf=d=>(Array.isArray(d.fields)?d.fields:[]).filter(f=>f&&(String(f.label||"").trim()||String(f.value||"").trim()));
 const mulFields=d=>d.type==="calc"?fieldsOf(d).filter(f=>f.mul&&numVal(f.value)!=null):[];
 function normDeal(d){
@@ -725,7 +732,7 @@ function normDeal(d){
 const dealAgreed=d=>{if(d.type==="calc"){const m=mulFields(d);return m.length?round2(m.reduce((a,f)=>a*numVal(f.value),1)):0}return round2(+d.amount||0)};
 const dealPaid=(d,upto=Infinity,skip)=>round2(D.entries.filter(e=>!e.deletedAt&&e.dealId===d.id&&e.ts<=upto&&e.id!==skip).reduce((a,e)=>a+(+e.amount||0),0));
 const dealBal=d=>round2(dealAgreed(d)-dealPaid(d));
-const dealInView=d=>{if(VIEW==="all")return true;const it=IM.get(d.item);return !!it&&GM.get(it.cat)?.kind===VIEW};
+const dealInView=d=>{if(VIEW==="all")return true;const it=IM.get(d.item),k=it&&GM.get(it.cat)?.kind;return !k||k===VIEW};
 const dealFormula=d=>d.type==="calc"?(mulFields(d).map(f=>`${String(f.label||"").trim()||"Value"} ${numfmt.format(numVal(f.value))}`).join(" × ")||"No number fields to multiply"):"Fixed amount";
 const isLate=d=>!!d.deadline&&!d.closed&&dealBal(d)>0&&new Date(d.deadline+"T23:59:59").getTime()<Date.now();
 const dueText=d=>d.deadline?`${isLate(d)?"Overdue, was due":"Due by"} ${shortDay(d.deadline)}`:"";
@@ -733,7 +740,7 @@ const saveDeals=()=>dbPut("meta",D.deals,"deals");
 const termsOf=d=>fieldsOf(d).filter(f=>!mulFields(d).includes(f)).map(f=>({label:String(f.label||"").trim(),value:String(f.value||"").trim()}));
 const termsText=d=>[...termsOf(d).map(t=>t.label?`${t.label}: ${t.value}`:t.value),...(d.deadline?[`Deadline: ${shortDay(d.deadline)}`]:[])];
 const balText=b=>b>=0?money(b):`${money(-b)} over`;
-function dealCard(d){
+function dealCard(d,withPays){
   const ag=dealAgreed(d),pd=dealPaid(d),bal=round2(ag-pd),pct=ag?Math.min(100,Math.round(pd/ag*100)):0,c=CM.get(d.contactId),it=IM.get(d.item);
   return `<div class="deal${d.closed?" done":""}">
     <div class="dhead"><b>${esc(d.title)}</b><span class="dicons"><button class="ib" data-de="${esc(d.id)}" aria-label="Edit deal ${esc(d.title)}">${ICON.edit}</button><button class="ib red" data-dd="${esc(d.id)}" aria-label="Delete deal ${esc(d.title)}">${ICON.trash}</button></span></div>
@@ -742,9 +749,20 @@ function dealCard(d){
     ${termsOf(d).length?`<dl class="dterms">${termsOf(d).map(t=>`<div><dt>${esc(t.label||"Term")}</dt><dd>${esc(t.value)}</dd></div>`).join("")}</dl>`:""}
     <div class="dbarw"><div class="dbar" role="img" aria-label="${pct}% paid"><i style="width:${pct}%"></i></div><span class="pc">${d.closed?"Complete":pct+"% paid"}</span></div>
     <div class="dnums"><span>Agreed<b class="num">${money(ag)}</b></span><span>Paid<b class="num">${money(pd)}</b></span><span>Balance<b class="num${bal<0?" over":""}">${balText(bal)}</b></span></div>
+    ${withPays?dealPays(d):""}
     ${d.closed?"":`<div class="pact"><button class="linkbtn" data-dp="${esc(d.id)}">+ Add payment</button></div>`}</div>`;
 }
+// payments counted against this deal, shown inside its card (first 5, then "Show all")
+function dealPays(d){
+  const ps=D.entries.filter(e=>!e.deletedAt&&e.dealId===d.id).sort((a,b)=>b.ts-a.ts);
+  if(!ps.length)return'<p class="dnone">No payments against this deal yet.</p>';
+  return `<div class="dpays"><span class="pg-l">${plural(ps.length,"payment","payments")} in this deal</span>
+    <ul class="book mini">${ps.map((e,i)=>rowHTML(e,null,null,false,{noVendor:true,noDeal:true}).replace("<li>",i>=5?'<li class="more5" hidden>':"<li>")).join("")}</ul>
+    ${ps.length>5?`<button type="button" class="linkbtn" data-dmore>Show all ${ps.length}</button>`:""}</div>`;
+}
 function bindDeals(root){
+  $$("[data-dmore]",root).forEach(b=>b.addEventListener("click",()=>{const box=b.closest(".dpays");const open=b.dataset.open!=="1";
+    $$(".more5",box).forEach(li=>li.hidden=!open);b.dataset.open=open?"1":"";b.textContent=open?"Show fewer":`Show all ${$$("li",box).length}`}));
   const find=b=>D.deals.find(x=>x.id===b.dataset.de||x.id===b.dataset.dp||x.id===b.dataset.dd);
   $$("[data-de]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(d)openDealForm(d)}));
   $$("[data-dd]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(d)deleteDeal(d)}));
@@ -758,6 +776,12 @@ async function deleteDeal(d,after){
 }
 function itemOptions(sel){return '<option value="">No item</option>'+D.groups.map(g=>{const its=D.items.filter(i=>i.cat===g.k&&(!i.hidden||i.k===sel));
   return its.length?`<optgroup label="${esc(g.n)}">${its.map(i=>`<option value="${esc(i.k)}"${i.k===sel?" selected":""}>${esc(i.n)}</option>`).join("")}</optgroup>`:""}).join("")}
+// placeholder for a value box, based on what the field is called
+const VAL_PH=[["rate","e.g. 285"],["price","e.g. 285"],["per ","e.g. 20"],["quantity","e.g. 7000"],["qty","e.g. 7000"],["area","e.g. 7000"],["length","e.g. 200"],["count","e.g. 1000"],
+  ["unit","e.g. sq ft, metre"],["material","e.g. Copper wire"],["brand","e.g. Polycab"],["work","e.g. Brick work and plaster"],["not included","e.g. Material"],["includes","e.g. Labour only"],
+  ["advance","e.g. 50000"],["payment","e.g. 30% advance, rest weekly"],["warranty","e.g. 1 year"],["size","e.g. 2.5 sq mm"],["floor","e.g. 4"],["days","e.g. 90"],
+  ["deliver","e.g. March 2027"],["start","e.g. 15 Nov 2026"],["finish","e.g. June 2027"],["colour","e.g. Off white"],["color","e.g. Off white"],["grade","e.g. Fe 500"]];
+const valPh=l=>{const k=String(l||"").trim().toLowerCase();if(!k)return"Value";const m=VAL_PH.find(([w])=>k.includes(w));return m?m[1]:`${String(l).trim()} value`};
 function dealFormHTML(o){
   return `<label class="lbl" for="dl-t">What is the deal for?</label><input class="field" id="dl-t" autocomplete="off" placeholder="e.g. Construction labour, Copper wire supply" value="${esc(o.title||"")}">
     <label class="lbl" for="dl-i">Item <span style="font-size:12px">(optional, helps link payments)</span></label><select class="field" id="dl-i">${itemOptions(o.item)}</select>
@@ -770,26 +794,31 @@ function dealFormHTML(o){
     <div class="dtotal"><span class="pmeta" id="dl-how">Agreed total</span><span class="num" id="dl-tot">₹0</span><span class="w" id="dl-words"></span></div>
     <p class="hint" data-w="calc">Number fields with × switched on are multiplied, for example Rate 285 × Quantity 7000. Change any value later and the total and balance update.</p>
     <label class="check"><input type="checkbox" id="dl-hasd"${o.deadline?" checked":""}>Has a deadline</label>
-    <input class="field" type="date" id="dl-date" value="${esc(o.deadline||"")}" style="margin-top:8px" aria-label="Deadline"${o.deadline?"":" hidden"}>
-    <label class="lbl" for="dl-n">Note</label><input class="field" id="dl-n" autocomplete="off" placeholder="Optional" value="${esc(o.note||"")}">`;
+    <div id="dl-dwrap"${o.deadline?"":" hidden"}>
+      <div class="chips" style="margin-top:8px">${[["7d","1 week"],["3m","3 months"],["6m","6 months"],["1y","1 year"],["5y","5 years"]].map(([k,l])=>`<button type="button" class="chip sm" data-dq="${k}">${l}</button>`).join("")}</div>
+      <input class="field" type="date" id="dl-date" value="${esc(o.deadline||"")}" style="margin-top:8px" aria-label="Deadline">
+    </div>
+    <label class="lbl" for="dl-n">Note</label><input class="field" id="dl-n" autocomplete="off" placeholder="e.g. Material by owner, labour only" value="${esc(o.note||"")}">
+    <div class="formmsg" id="dl-msg" hidden></div>`;
 }
 function wireDealForm(root,o){
   const q=x=>$(x,root);let type=o.type||"calc";
   let tl=$("#pe-termlabels");if(!tl){tl=document.createElement("datalist");tl.id="pe-termlabels";document.body.appendChild(tl)}
   tl.innerHTML=[...new Set(["Rate","Quantity","Unit","Area","Material","Brand","Work","Includes","Not included","Advance","Payment terms","Warranty",...D.deals.flatMap(x=>fieldsOf(x).map(f=>String(f.label||"").trim())).filter(Boolean)])].map(x=>`<option value="${esc(x)}">`).join("");
-  const noMul=l=>/advance|deposit|year|date|phone|mobile|floor|warranty/i.test(l||"");
+  const noMul=l=>/advance|deposit|year|date|deliver|due|by\b|phone|mobile|floor|warranty|days|month|size|gauge|mm\b/i.test(l||"");
   const addField=(f,focus)=>{const row=document.createElement("div");row.className="frow";
-    row.innerHTML=`<input class="field" data-fl list="pe-termlabels" placeholder="Field, e.g. Rate" autocomplete="off" aria-label="Field name"><input class="field" data-fv placeholder="Value, e.g. 285" autocomplete="off" aria-label="Field value"><button type="button" class="mul" aria-label="Multiply this into the total" title="Multiply into the total">×</button><button type="button" class="x xs" aria-label="Remove field">×</button>`;
+    row.innerHTML=`<input class="field" data-fl list="pe-termlabels" placeholder="Field name, e.g. Rate" autocomplete="off" aria-label="Field name"><input class="field" data-fv placeholder="Value" autocomplete="off" aria-label="Field value"><button type="button" class="mul" aria-label="Multiply this into the total" title="Multiply into the total">×</button><button type="button" class="x xs" aria-label="Remove field">×</button>`;
     const fl=$("[data-fl]",row),fv=$("[data-fv]",row),mul=$(".mul",row);
     if(f){fl.value=f.label||"";fv.value=f.value||""}
+    const ph=()=>{fv.placeholder=valPh(fl.value);fv.setAttribute("aria-label",fl.value.trim()?`${fl.value.trim()} value`:"Field value")};ph();
     row.dataset.mul=String(f&&"mul" in f?!!f.mul:!noMul(f?.label));row.dataset.touched=f&&"mul" in f?"1":"";
     mul.addEventListener("click",()=>{row.dataset.mul=String(row.dataset.mul!=="true");row.dataset.touched="1";paint()});
-    fl.addEventListener("input",()=>{if(!row.dataset.touched)row.dataset.mul=String(!noMul(fl.value));paint()});
+    fl.addEventListener("input",()=>{if(!row.dataset.touched)row.dataset.mul=String(!noMul(fl.value));ph();paint()});
     fv.addEventListener("input",paint);
     $(".x",row).addEventListener("click",()=>{row.remove();paint()});
     q("#dl-fields").appendChild(row);if(focus)(f&&f.label?fv:fl).focus();paint()};
   const rows=()=>$$(".frow",q("#dl-fields")).map(r=>({label:$("[data-fl]",r).value.trim(),value:$("[data-fv]",r).value.trim(),mul:r.dataset.mul==="true",row:r}));
-  const cur=()=>({type,fields:rows().filter(f=>f.label||f.value).map(({label,value,mul})=>numVal(value)!=null?{label,value,mul}:{label,value}),amount:pnum(q("#dl-a").value)});
+  const cur=()=>({type,fields:rows().filter(f=>f.value).map(({label,value,mul})=>numVal(value)!=null?{label,value,mul}:{label,value}),amount:pnum(q("#dl-a").value)});
   function paint(){
     $$("[data-dt]",root).forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.dt===type)));
     q("[data-w=fixed]").hidden=type!=="fixed";q("[data-w=calc]").hidden=type!=="calc";
@@ -803,12 +832,18 @@ function wireDealForm(root,o){
   $$("[data-qf]",root).forEach(b=>b.addEventListener("click",()=>addField({label:b.dataset.qf},true)));
   $$("[data-dt]",root).forEach(b=>b.addEventListener("click",()=>{type=b.dataset.dt;paint();if(type==="fixed")q("#dl-a").focus()}));
   q("#dl-a").addEventListener("input",paint);
-  q("#dl-hasd").addEventListener("change",()=>{q("#dl-date").hidden=!q("#dl-hasd").checked;if(q("#dl-hasd").checked&&!q("#dl-date").value)q("#dl-date").focus()});
+  q("#dl-hasd").addEventListener("change",()=>{q("#dl-dwrap").hidden=!q("#dl-hasd").checked});
+  // shortcuts count from today
+  $$("[data-dq]",root).forEach(b=>b.addEventListener("click",()=>{const d=new Date(),k=b.dataset.dq,n=parseInt(k);
+    if(k.endsWith("d"))d.setDate(d.getDate()+n);else if(k.endsWith("m"))d.setMonth(d.getMonth()+n);else d.setFullYear(d.getFullYear()+n);
+    q("#dl-date").value=localDay(d);$$("[data-dq]",root).forEach(x=>x.setAttribute("aria-pressed",String(x===b)))}));
+  q("#dl-date").addEventListener("input",()=>$$("[data-dq]",root).forEach(x=>x.setAttribute("aria-pressed","false")));
   q("#dl-i").addEventListener("change",()=>{if(!q("#dl-t").value.trim()){const it=IM.get(q("#dl-i").value);if(it)q("#dl-t").value=it.n}});
   paint();
   return{item:()=>q("#dl-i").value||null,onItem:fn=>q("#dl-i").addEventListener("change",fn),
+    showError(m){const el=q("#dl-msg");el.textContent=m||"";el.hidden=!m;if(m)el.scrollIntoView({block:"nearest",behavior:"smooth"})},
     collect(){const c=cur(),t=dealAgreed(c);
-      if(!(t>0))return{error:type==="calc"?"Add number fields to multiply (for example Rate and Quantity), or choose Fixed amount":"Enter the agreed amount"};
+      if(!(t>0))return{error:type==="calc"?(rows().some(f=>f.value&&numVal(f.value)!=null)?"Switch on × for the numbers to multiply, for example Rate and Quantity":"Add fields with numbers to multiply (for example Rate 285 and Quantity 7000), or choose Fixed amount"):"Enter the agreed amount"};
       if(q("#dl-hasd").checked&&!q("#dl-date").value)return{error:"Pick the deadline date"};
       const it=q("#dl-i").value||null;
       const n={title:q("#dl-t").value.trim()||(IM.get(it)?.n)||"Deal",item:it,type,fields:c.fields,note:q("#dl-n").value.trim()};
@@ -832,7 +867,7 @@ function openDealForm(d,{contactId,onSaved}={}){
     q("#dl-el").textContent=`Count earlier payments to ${c?.name||"this person"} against this deal (${plural(es.length,"payment","payments")}, ${money(es.reduce((a,e)=>a+(+e.amount||0),0))})`};
   api.onItem(paintEarlier);paintEarlier();if(!d)setTimeout(()=>q("#dl-t").focus(),50);
   q("#dl-save").addEventListener("click",async()=>{
-    const r=api.collect();if(r.error){toast(r.error);return}
+    const r=api.collect();api.showError(r.error);if(r.error){toast(r.error);return}
     const n={...o,...r.deal,id:o.id||newId("d"),updatedAt:Date.now(),createdAt:o.createdAt||Date.now()};
     if(n.type!=="fixed")delete n.amount;if(!r.deal.deadline)delete n.deadline;
     if(d){n.closed=q("#dl-c").checked;if(!n.closed)delete n.closed}
@@ -932,7 +967,7 @@ function openItemForm(item,{cat,onSaved}={}){
     <select class="field" id="if-g">${D.groups.map(g=>`<option value="${esc(g.k)}"${g.k===it.cat?" selected":""}>${esc(g.n)} (${g.kind?KINDS[g.kind]:"Unknown"})</option>`).join("")}</select>
     <label class="lbl" for="if-u">Units <span style="font-size:12px">(optional, comma separated)</span></label><input class="field" id="if-u" autocomplete="off" placeholder="e.g. kg, bundle" value="${esc((it.units||[]).join(", "))}">
     <p class="hint">Add units if you want quantity × rate on this item. Leave empty for payments.</p>
-    <label class="lbl" for="if-s">Short note under the name <span style="font-size:12px">(optional)</span></label><input class="field" id="if-s" autocomplete="off" value="${esc(it.sub||"")}">
+    <label class="lbl" for="if-s">Short note under the name <span style="font-size:12px">(optional)</span></label><input class="field" id="if-s" autocomplete="off" placeholder="e.g. 50 kg bag" value="${esc(it.sub||"")}">
     ${item?`<label class="check"><input type="checkbox" id="if-h" ${it.hidden?"checked":""}>Hide from the Add screen</label><p class="hint">Hidden items keep their old entries and totals.</p>`:""}
     <button class="primary" id="if-save">${item?"Save item":"Add item"}</button>
     ${item?(used?`<p class="hint">Used in ${plural(used,"entry","entries")}, so it can’t be deleted. Hide it instead.</p>`:'<button class="danger" id="if-del">Delete item</button>'):""}`);
@@ -1024,14 +1059,14 @@ function makeForm(root,{entry,onDone,onCancel}){
     <div class="pickhead"><span class="lbl">What was it for? <span style="font-size:12px">(optional)</span></span><span><button type="button" class="linkbtn" data-f="clearItem" hidden>Clear</button><button type="button" class="linkbtn" data-f="editItems">Edit groups</button></span></div>
     <div class="gsel" data-f="picker"></div>
     <div class="row3" data-f="qtyWrap" hidden style="margin-top:10px">
-      <label><small>Quantity</small><input class="field" data-f="qty" inputmode="decimal"></label>
+      <label><small>Quantity</small><input class="field" data-f="qty" inputmode="decimal" placeholder="e.g. 50"></label>
       <label><small>Unit</small><select class="field" data-f="unit"></select></label>
-      <label><small>Rate ₹</small><input class="field" data-f="rate" inputmode="decimal"></label>
+      <label><small>Rate ₹</small><input class="field" data-f="rate" inputmode="decimal" placeholder="e.g. 303"></label>
     </div>
     <div class="hint" data-f="hint"></div>
     <span class="lbl">Shop or person</span>
     <div class="stack">
-      <input class="field" data-f="vendor" placeholder="Type a name or pick one below" autocomplete="off" aria-label="Shop or person">
+      <input class="field" data-f="vendor" placeholder="e.g. Sharma Cement Store" autocomplete="off" aria-label="Shop or person">
       <div class="chips" data-f="vendorSug"></div>
       <input class="field" data-f="phone" type="tel" inputmode="tel" placeholder="Mobile number (optional)" autocomplete="off" aria-label="Mobile number">
       <div data-f="dealWrap" hidden><span class="lbl" style="margin-top:4px">Count this payment against</span><div class="chips" data-f="deal" role="group" aria-label="Count this payment against"></div><div class="hint" data-f="dealHint"></div></div>
@@ -1039,7 +1074,7 @@ function makeForm(root,{entry,onDone,onCancel}){
       <button type="button" class="linkbtn" data-f="addOther" style="justify-self:start">+ Add another person</button>
     </div>
     <span class="lbl">Note</span>
-    <input class="field" data-f="note" placeholder="Optional" autocomplete="off">
+    <input class="field" data-f="note" placeholder="e.g. Slip kept in diary, 2nd floor" autocomplete="off">
     <span class="lbl">Date</span><input class="field" type="date" data-f="when" aria-label="Date of payment">
     <div class="slip">
       <label class="slipbtn"><input type="file" accept="image/*" data-f="file" hidden><span data-f="sliplbl">Add slip photo</span></label>
@@ -1086,13 +1121,13 @@ function makeForm(root,{entry,onDone,onCancel}){
     else{const byItem=st.item?recent(LIVE.filter(e=>e.item===st.item)):[];list=byItem.length?byItem:recent(LIVE)}
     list=list.slice(0,3);
     box.innerHTML=list.map(c=>`<button type="button" class="chip" data-c="${esc(c.id)}">${esc(c.name)}</button>`).join("");
-    box.hidden=!list.length;
+    box.hidden=!list.length;vendor.placeholder=list.length&&!q?"Type a name or pick one below":"e.g. Sharma Cement Store";
     $$("[data-c]",box).forEach(b=>b.addEventListener("click",()=>{const c=CM.get(b.dataset.c);if(!c)return;vendor.value=c.name;phone.value=c.phone||"";st.dealTouched=false;paintSug();paintDeal()}));
   }
   function addOther(o){
     const box=f("others"),row=document.createElement("div");row.className="xp";
     row.innerHTML=`<div class="xph"><small>Another person</small><button type="button" class="x xs" aria-label="Remove this person">×</button></div>
-      <input class="field" data-xn list="pe-contacts" placeholder="Name" autocomplete="off" aria-label="Name">
+      <input class="field" data-xn list="pe-contacts" placeholder="Name, e.g. Mahesh" autocomplete="off" aria-label="Name">
       <div class="row"><input class="field" data-xp type="tel" inputmode="tel" placeholder="Mobile (optional)" autocomplete="off" aria-label="Mobile">
       <input class="field" data-xr list="pe-roles" placeholder="Role, e.g. Broker" autocomplete="off" aria-label="Role"></div>`;
     const c=o&&CM.get(o.contactId);if(c){$("[data-xn]",row).value=c.name;$("[data-xp]",row).value=c.phone||"";$("[data-xr]",row).value=o.role||""}
@@ -1288,12 +1323,12 @@ function openView(id,opt={}){
 }
 
 /* ---------- rows ---------- */
-function rowHTML(e,bal,sel,acts){
+function rowHTML(e,bal,sel,acts,opt={}){
   const d=new Date(e.ts),name=itemName(e),bits=[];
   if(e.qty)bits.push(`${numfmt.format(e.qty)} ${esc(e.unit||"")}${e.rate?` @ ${money(e.rate)}`:""}`);
-  if(e.vendor)bits.push(esc(e.vendor));
+  if(e.vendor&&!opt.noVendor)bits.push(esc(e.vendor));
   const on=otherNames(e);if(on.length)bits.push("with "+esc(on.join(", ")));
-  const dli=e.dealId&&D.deals.find(x=>x.id===e.dealId);if(dli)bits.push("deal: "+esc(dli.title));
+  const dli=e.dealId&&D.deals.find(x=>x.id===e.dealId);if(dli&&!opt.noDeal)bits.push("deal: "+esc(dli.title));
   if(e.note)bits.push(esc(e.note));
   const mode=e.cash&&e.online?`<span class="tag cash">Cash ${money(e.cash)}</span><br><span class="tag online">Online ${money(e.online)}</span>`
     :e.cash?'<span class="tag cash">Cash</span>':'<span class="tag online">Online</span>';
@@ -1470,6 +1505,7 @@ function openPerson(id){
     const es=LIVE.filter(e=>e.contactId===c.id),t=sums(es);
     const inv=LIVE.filter(e=>e.contactId!==c.id&&othersOf(e).some(o=>o.contactId===c.id));
     const its=[...new Set(es.map(itemName).filter(Boolean))].join(", ");
+    const ds=projDeals().filter(d=>d.contactId===c.id),other=es.filter(e=>!e.dealId||!ds.some(d=>d.id===e.dealId));
     s.body.innerHTML=`
     <p class="pmeta" style="margin:0">${esc([c.phone,its].filter(Boolean).join(" · ")||"No mobile number saved")}</p>
     <div class="pacts">
@@ -1478,14 +1514,15 @@ function openPerson(id){
       <button class="pill" data-p="pay">+ Payment</button>
     </div>
     <div class="phead" style="margin-top:10px"><span class="lbl" style="margin:0">Deals</span><button class="linkbtn" data-p="adddeal">+ Add deal</button></div>
-    ${projDeals().filter(d=>d.contactId===c.id&&dealInView(d)).map(dealCard).join("")||'<p class="hint" style="margin:2px 0 6px">No deal yet. Add one when the price is agreed up front, for example ₹285 per sq ft or ₹75,000 fixed.</p>'}
+    ${ds.map(d=>dealCard(d,true)).join("")||'<p class="hint" style="margin:2px 0 6px">No deal yet. Add one when the price is agreed up front, for example ₹285 per sq ft or ₹75,000 fixed.</p>'}
     ${es.length?`<div class="sumstrip">
       <div>Paid<span class="num">${money(t.t)}</span></div><div>Cash<span class="num">${money(t.c)}</span></div><div>Online<span class="num">${money(t.o)}</span></div></div>
     <p class="count" style="font-style:italic">${esc(inWords(t.t))}</p>
     <p class="count">${plural(es.length,"payment","payments")}, ${fdate(es[es.length-1].ts)} to ${fdate(es[0].ts)}</p>
     <button class="primary" data-p="share">Share statement</button>
     <button class="second" data-p="book">Show in passbook</button>
-    <ul class="book" style="margin-top:10px">${es.map(e=>rowHTML(e)).join("")}</ul>`
+    ${ds.length?`<span class="lbl" style="margin-top:14px">Other payments <span style="font-size:12px">(not in any deal)</span></span>`:""}
+    ${other.length?`<ul class="book" style="margin-top:${ds.length?0:10}px">${other.map(e=>rowHTML(e,null,null,false,{noVendor:true})).join("")}</ul>`:ds.length?'<p class="hint" style="margin:0">All payments are counted in a deal.</p>':""}`
     :inv.length?"":`<p class="empty">No entries for ${esc(c.name)} ${VIEW==="all"?"in this project":"in this view"} yet.</p>`}
     ${inv.length?`<span class="lbl">Also involved in</span><ul class="book">${inv.map(e=>rowHTML(e)).join("")}</ul>`:""}`;
     $("[data-p=edit]",s.body).addEventListener("click",()=>openContact(c));
@@ -1502,7 +1539,7 @@ function openContact(c){
   const used=c?D.entries.filter(e=>e.contactId===c.id||(e.others||[]).some(o=>o.contactId===c.id)).length+D.deals.filter(d=>d.contactId===c.id).length:0;
   const s=openSheet(c?"Edit contact":"New contact",`
     <label class="lbl" for="ct-n">Name</label><input class="field" id="ct-n" autocomplete="off" placeholder="e.g. Sharma Cement Store" value="${esc(c?.name||"")}">
-    <label class="lbl" for="ct-p">Mobile number</label><input class="field" id="ct-p" type="tel" inputmode="tel" autocomplete="off" value="${esc(c?.phone||"")}">
+    <label class="lbl" for="ct-p">Mobile number</label><input class="field" id="ct-p" type="tel" inputmode="tel" autocomplete="off" placeholder="e.g. 98765 43210 (optional)" value="${esc(c?.phone||"")}">
     ${c&&used?`<p class="hint">Renaming also updates the name on ${plural(used,"entry","entries")}.</p>`:""}
     ${c?"":`<button type="button" class="second" id="ct-adddeal">+ Add a deal</button><div class="deal-inline" id="ct-deal" hidden><div class="phead"><span class="lbl" style="margin:10px 0 0">Deal with this person</span><button type="button" class="linkbtn" id="ct-nodeal">Remove</button></div>${dealFormHTML({type:"calc",fields:[]})}</div>`}
     <button class="primary" id="ct-save">${c?"Save contact":"Add contact"}</button>
@@ -1516,7 +1553,7 @@ function openContact(c){
     if(!name){toast("Type a name");return}
     const dup=D.contacts.find(x=>x.name.toLowerCase()===name.toLowerCase()&&x.id!==c?.id);
     if(dup){toast(`“${dup.name}” is already saved`);return}
-    let dr=null;if(dbox&&!dbox.hidden){dr=dapi.collect();if(dr.error){toast(dr.error);return}}
+    let dr=null;if(dbox&&!dbox.hidden){dr=dapi.collect();dapi.showError(dr.error);if(dr.error){toast(dr.error);return}}
     try{
       const o={...(c||{id:newId("c"),createdAt:Date.now()}),name,phone,updatedAt:Date.now()};
       await dbPut("contacts",o);const i=D.contacts.findIndex(x=>x.id===o.id);if(i>=0)D.contacts[i]=o;else D.contacts.push(o);
