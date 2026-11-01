@@ -66,6 +66,15 @@ button{cursor:pointer}
 #addcard{box-shadow:inset 4px 0 0 var(--tape)}
 #addcard h2{display:flex;align-items:center;gap:8px}
 #addcard h2::before{content:"+";display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--tape);color:var(--tape-ink);font-size:20px;font-weight:600;line-height:1}
+.lrow{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;width:100%;text-align:left;border:0;border-bottom:1px solid var(--rule);background:none;padding:10px 2px;color:var(--ink)}
+.lrow .bx{width:22px;height:22px;border-radius:6px;border:2px solid var(--rule);display:grid;place-items:center}
+.lrow[aria-pressed="true"] .bx{background:var(--ink);border-color:var(--ink)}
+.lrow[aria-pressed="true"] .bx::after{content:"";width:6px;height:11px;border:solid var(--card);border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.lrow b{display:block;font-weight:600;font-size:15px}
+.lrow small{display:block;font-size:12.5px;color:var(--muted)}
+.lrow small.mv{color:var(--warn-ink)}
+.lrow .num{font-size:22px}
+.lsum{position:sticky;bottom:0;background:var(--card);padding-top:8px}
 .selbar .del{border:0;background:transparent;color:var(--card);width:40px;height:40px;display:grid;place-items:center;border-radius:10px}
 .selbar .del svg{width:20px;height:20px}
 .selbar .del:disabled{opacity:.4}

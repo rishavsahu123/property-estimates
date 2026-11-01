@@ -10,7 +10,7 @@ Planned for Google Play / App Store later with a subscription (see roadmap.md).
 ## Files
 - `index.html` — the whole app: HTML, CSS and JS in one file, no framework, no build step.
 - `sw.js` — service worker: cache-first for the app shell, network-first for index.html.
-  **Bump `const V` on every change to any file** (currently pe-v2.10.1).
+  **Bump `const V` on every change to any file** (currently pe-v2.10.2).
 - `manifest.webmanifest` — name "Property Estimates", short name "Estimates".
 - `exceljs.min.js` (ExcelJS 4.4.0) and `jspdf.umd.min.js` (jsPDF 2.5.2) — loaded lazily, cached by the SW.
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`.
@@ -41,6 +41,7 @@ Planned for Google Play / App Store later with a subscription (see roadmap.md).
 - Tests poke state through `window.__pe` (D, SHEETS, dealAgreed).
 
 ## Features in place
+- v2.10.2: each deal card has "Link existing payments" (`openLinkPays`). Tick or untick payments to put them in or take them out of the deal. It shows this person's payments, or everyone's; a payment already in another deal moves here when ticked.
 - v2.10.1: entries made while Construction/Documents is picked get `kind` (used when the item gives none), so they stay in that view. Deleting an entry asks first. Select mode can move many entries to trash, with Undo. Receipts use every payment in the project, whatever the view. The total card is a dark banner, and "Add new entry" has a yellow marker.
 - Workflow: change the root index.html, then run `python3 split.py` (cloud scratchpad) to regenerate app/src/legacy/app.ts, app.css and index.html until the screens are split into typed modules.
 

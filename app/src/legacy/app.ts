@@ -138,7 +138,7 @@ function dealCard(d,withPays,opts={}){
     <div class="dbarw"><div class="dbar" role="img" aria-label="${pct}% paid"><i style="width:${pct}%"></i></div><span class="pc">${d.closed?"Complete":pct+"% paid"}</span></div>
     <div class="dnums"><span>${agLabel(d)}<b class="num">${money(ag)}</b></span><span>Paid<b class="num">${money(pd)}</b></span><span>${isMonthly(d)&&bal>0?"Due now":"Balance"}<b class="num${bal<0&&!isMonthly(d)?" over":""}">${balText(bal,d)}</b></span></div>
     ${withPays?dealPays(d):""}
-    ${d.closed?"":`<div class="pact"><button class="linkbtn" data-dp="${esc(d.id)}">+ Add payment</button></div>`}</div>`;
+    <div class="pact">${d.closed?"":`<button class="linkbtn" data-dp="${esc(d.id)}">+ Add payment</button>`}<button class="linkbtn" data-dk="${esc(d.id)}">Link existing payments</button></div></div>`;
 }
 // payments counted against this deal, shown inside its card (first 5, then "Show all")
 function dealPays(d){
@@ -151,12 +151,40 @@ function dealPays(d){
 function bindDeals(root){
   $$("[data-dmore]",root).forEach(b=>b.addEventListener("click",()=>{const box=b.closest(".dpays");const open=b.dataset.open!=="1";
     $$(".more5",box).forEach(li=>li.hidden=!open);b.dataset.open=open?"1":"";b.textContent=open?"Show fewer":`Show all ${$$("li",box).length}`}));
-  const find=b=>D.deals.find(x=>x.id===b.dataset.de||x.id===b.dataset.dp||x.id===b.dataset.dd||x.id===b.dataset.ds);
+  const find=b=>D.deals.find(x=>x.id===b.dataset.de||x.id===b.dataset.dp||x.id===b.dataset.dd||x.id===b.dataset.ds||x.id===b.dataset.dk);
+  $$("[data-dk]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(d)openLinkPays(d)}));
   $$("[data-ds]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(!d)return;const ids=D.entries.filter(e=>!e.deletedAt&&e.projectId===D.pid&&e.dealId===d.id).map(e=>e.id);
     if(!ids.length){toast("No payments in this deal yet. Add one to share a receipt.");return}openReceipt(ids,{deal:true})}));
   $$("[data-de]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(d)openDealForm(d)}));
   $$("[data-dd]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(d)deleteDeal(d)}));
   $$("[data-dp]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(d)openPaySheet({deal:d})}));
+}
+// tick payments already in the passbook to count them in this deal (untick to take them out)
+function openLinkPays(d){
+  const c=CM.get(d.contactId);let everyone=!c;
+  const start=new Set(D.entries.filter(e=>!e.deletedAt&&e.dealId===d.id).map(e=>e.id)),on=new Set(start);
+  const s=openSheet("Link payments to this deal","",`Link payments to ${d.title}`);
+  const paint=()=>{
+    const es=D.entries.filter(e=>!e.deletedAt&&e.projectId===D.pid&&(on.has(e.id)||start.has(e.id)||everyone||e.contactId===d.contactId)).sort((a,b)=>b.ts-a.ts);
+    const paid=round2(D.entries.filter(e=>!e.deletedAt&&on.has(e.id)).reduce((a,e)=>a+(+e.amount||0),0)),ag=dealAgreed(d),changed=[...on].filter(x=>!start.has(x)).length+[...start].filter(x=>!on.has(x)).length;
+    keepScroll(s,()=>{s.body.innerHTML=`
+      <p class="pmeta" style="margin:0 0 8px"><b>${esc(d.title)}</b>${c?` · ${esc(c.name)}`:""}. Tick the payments that belong to this deal.</p>
+      ${c?`<div class="seg s2" role="group" aria-label="Whose payments"><button type="button" data-lw="me" aria-pressed="${!everyone}">${esc(c.name)}</button><button type="button" data-lw="all" aria-pressed="${everyone}">Everyone</button></div>`:""}
+      <div style="margin-top:6px">${es.length?es.map(e=>{const od=e.dealId&&e.dealId!==d.id?D.deals.find(x=>x.id===e.dealId):null;
+        return `<button type="button" class="lrow" data-le="${esc(e.id)}" aria-pressed="${on.has(e.id)}"><span class="bx" aria-hidden="true"></span>
+          <span style="min-width:0"><b>${esc(itemName(e)||e.vendor||e.note||"Payment")}</b><small>${esc([fdate(e.ts),e.vendor&&itemName(e)?e.vendor:"",e.note].filter(Boolean).join(" · "))}</small>${od?`<small class="mv">In “${esc(od.title)}”. Ticking moves it here.</small>`:""}</span>
+          <span class="num">${money(e.amount)}</span></button>`}).join(""):`<p class="empty">No payments ${c&&!everyone?`to ${esc(c.name)} `:""}yet.${c&&!everyone?" Tap Everyone to see all payments.":""}</p>`}</div>
+      <div class="lsum"><div class="sumstrip" style="margin-top:4px"><div>${agLabel(d)}<span class="num">${money(ag)}</span></div><div>Paid<span class="num">${money(paid)}</span></div><div>Balance<span class="num">${balText(round2(ag-paid),d)}</span></div></div>
+      <button class="primary" id="lk-save"${changed?"":" disabled"}>${changed?`Save (${plural(on.size,"payment","payments")} in this deal)`:"No changes yet"}</button></div>`});
+    $$("[data-lw]",s.body).forEach(b=>b.addEventListener("click",()=>{everyone=b.dataset.lw==="all";paint()}));
+    $$("[data-le]",s.body).forEach(b=>b.addEventListener("click",()=>{const id=b.dataset.le;if(on.has(id))on.delete(id);else on.add(id);paint()}));
+    $("#lk-save",s.body).addEventListener("click",async()=>{
+      try{let n=0;
+        for(const e of D.entries.filter(x=>on.has(x.id)!==start.has(x.id))){if(on.has(e.id))e.dealId=d.id;else delete e.dealId;e.updatedAt=Date.now();await dbPut("entries",e);n++}
+        s.close();emit();toast(`Deal updated · ${plural(on.size,"payment","payments")} linked`)}
+      catch{toast("Couldn’t save. Try again.")}});
+  };
+  paint();
 }
 async function deleteDeal(d,after){
   const linked=D.entries.filter(e=>e.dealId===d.id&&!e.deletedAt).length;
