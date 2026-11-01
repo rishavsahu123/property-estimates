@@ -1,6 +1,6 @@
 # Property Estimates — Production Plan
 
-Status: **waiting for approval** (written 1 Nov 2026). Nothing below is built yet except Phase 0.
+Status: **approved 2 Nov 2026.** Phase 0 done. Phase 1 in progress (milestone 1 done, see below).
 
 ## Goals
 
@@ -171,7 +171,20 @@ You can start the Razorpay KYC and Google Cloud setup now, in parallel with Phas
 - Drive backup: on by default after sign-in, can be disabled, frequency Daily/Weekly/Monthly/Only when I tap/Off, plus Wi-Fi only.
 - Price: 7-day free trial, then ₹49/month auto-renew.
 
-## Open questions
+- Drive folder: visible "Property Estimates backups" folder (approved).
+- Grace after a missed payment: 3 days (approved).
 
-1. Drive folder: **visible "Property Estimates backups" folder** (recommended, since you can see and download your backups) or hidden app storage?
-2. Grace after a missed payment: 3 days OK?
+## Phase 1 progress
+
+- Milestone 1 (2 Nov 2026), done:
+  - New project in `app/` (Vite 6 + TypeScript 5 strict, Vitest).
+  - Typed core in `src/types.ts`, `src/lib/{format,deals,constants}.ts`, `src/data/db.ts`.
+  - Screens moved unchanged into `src/legacy/app.ts` (`@ts-nocheck`).
+  - The service worker version and file list are generated at build.
+  - 20 unit tests and 22 browser tests (`npm run e2e`) pass on the build.
+  - `.github/workflows/deploy.yml` deploys `app/dist` to Pages.
+  - The old root files stay live until Pages is switched to "GitHub Actions".
+- Next milestones:
+  1. Split `legacy/app.ts` into typed modules: state store, sheets/dialog, entry form, passbook, people/deals, summary/charts, receipt, export, backup.
+  2. Turn the test scripts into assertion-based Playwright tests.
+  3. Cut over and move the root JS files into `old/`.

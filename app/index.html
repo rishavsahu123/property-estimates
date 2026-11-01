@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Property Estimates</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#1C2B3A">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;500;600&family=Teko:wght@500;600&display=swap" rel="stylesheet">
+<script>try{var t=JSON.parse(localStorage.getItem("pe-theme")||'"auto"');if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body>
+<div id="boot" role="status"><div class="spin"></div><div id="bootmsg">Opening Property Estimates…</div></div>
+<main>
+  <div class="topbar">
+    <div class="tleft">
+      <button class="projbtn" id="projbtn" aria-label="Switch project"><span id="projname">Project</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <select class="viewsel" id="viewsel" aria-label="Show in the app"><option value="all">All</option><option value="construction">Construction</option><option value="documents">Documents</option></select>
+    </div>
+    <div class="ticons">
+      <button class="ibtn" id="m-down-b" aria-label="Download PDF, Excel or backup" aria-expanded="false" aria-controls="m-down"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></button>
+      <button class="ibtn" id="m-up-b" aria-label="Restore from backup" aria-expanded="false" aria-controls="m-up"><svg viewBox="0 0 24 24"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg></button>
+      <button class="ibtn" id="m-info-b" aria-label="About your data and settings" aria-expanded="false" aria-controls="m-info"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.6v.2"/></svg></button>
+    </div>
+    <div class="menu" id="m-down" hidden>
+      <button class="mi" id="pdf"><svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg><span><b>PDF with slip photos</b><small>All entries of this project. Opens on any phone.</small></span></button>
+      <button class="mi" id="excel"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M4 15h16M10 4v16"/></svg><span><b>Excel sheet</b><small>This project, slip photos inside the rows.</small></span></button>
+      <button class="mi" id="backup"><svg viewBox="0 0 24 24"><path d="M5 8h14v11H5zM3 4h18v4H3zM10 12h4"/></svg><span><b>Full backup</b><small>All projects and photos. Keep it on Google Drive or WhatsApp.</small></span></button>
+    </div>
+    <div class="menu" id="m-up" hidden>
+      <button class="mi" id="restorebtn"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg><span><b>Restore from backup</b><small>Pick a backup file. Adds its entries; nothing on this phone is removed.</small></span></button>
+      <input type="file" id="restorefile" accept=".json,application/json,text/plain" hidden>
+    </div>
+    <div class="menu" id="m-info" hidden>
+      <div class="minfo">
+        <p><b>Your data stays on this phone.</b> If you uninstall the app or clear Chrome’s data, it’s gone. Save a full backup from the download menu now and then.</p>
+        <p id="lastbackup"></p>
+        <p id="storeuse" hidden></p>
+        <p><b>PDF or Excel?</b> The PDF shows every slip photo and opens anywhere. Excel photos show in the Excel or WPS app, not in WhatsApp or Google Drive previews.</p>
+        <p><b>Restore</b> adds entries from a backup file and keeps everything already on this phone. A backup from the old Ghar ka Hisaab app works too.</p>
+        <p><b>All, Construction, Documents</b> next to the project name filters the whole app. Each group’s category is set in Edit groups on the Add screen. Groups marked Unknown show only under All.</p>
+        <p><b>Receipts:</b> in Passbook tap Select, pick entries, then Share receipt.</p>
+        <span class="lbl" style="margin-top:0">Appearance</span>
+        <div class="seg" role="group" aria-label="Theme" id="theme">
+          <button type="button" data-theme="auto">Auto</button><button type="button" data-theme="light">Light</button><button type="button" data-theme="dark">Dark</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section id="v-add">
+    <div class="hero">
+      <div class="hero-in">
+        <div><h1 id="h-label">Total spent so far</h1><div class="big num" id="h-total">₹0</div><span class="w" id="h-words"></span></div>
+        <div class="split">Cash <b id="h-cash">₹0</b><br>Online <b id="h-online">₹0</b></div>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+    <div class="card" id="installcard" hidden>
+      <h2>Install on this phone</h2>
+      <p class="pmeta" style="margin:0">Adds Property Estimates to your home screen. It then opens like a normal app and works without internet.</p>
+      <button class="primary" id="install">Install app</button>
+    </div>
+    <div class="card" id="addcard"><h2>Add new entry</h2><div id="addform"></div></div>
+    <div class="card">
+      <h2>Latest entries</h2>
+      <ul class="book" id="recent"></ul>
+      <button class="more" data-go="book">Open passbook</button>
+    </div>
+  </section>
+
+  <section id="v-book" hidden>
+    <div class="card">
+      <div class="phead" style="margin-bottom:10px"><h2 style="margin:0">Passbook</h2><span><button class="linkbtn" id="selall" hidden>Select all</button><button class="linkbtn" id="selbtn">Select</button><button class="linkbtn" data-go="trash" id="trashlink">Trash</button></span></div>
+      <div class="tools">
+        <button class="fbtn" id="openfilters"><svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filters <span class="badge" id="fcount" hidden></span></button>
+        <select class="field" id="sort" aria-label="Sort by">
+          <option value="date-desc">Newest first</option>
+          <option value="date-asc">Oldest first</option>
+          <option value="amt-desc">Amount, high to low</option>
+          <option value="amt-asc">Amount, low to high</option>
+          <option value="item">Item name</option>
+          <option value="person">Shop or person</option>
+        </select>
+      </div>
+      <div class="ftags" id="ftags"></div>
+      <div class="sumstrip">
+        <div>Spent<span class="num" id="b-total">₹0</span></div>
+        <div>Cash<span class="num" id="b-cash">₹0</span></div>
+        <div>Online<span class="num" id="b-online">₹0</span></div>
+      </div>
+      <p class="count" id="b-words" style="font-style:italic"></p>
+      <p class="count" id="b-count"></p>
+      <ul class="book" id="book"></ul>
+      <button class="more" id="bookmore" hidden>Show more</button>
+      <button class="second" id="bookpdf" hidden>Download PDF of these entries</button>
+    </div>
+  </section>
+
+  <section id="v-trash" hidden>
+    <div class="card">
+      <div class="phead"><h2>Trash</h2><button class="linkbtn" data-go="book">Back to passbook</button></div>
+      <p class="pmeta" style="margin:0 0 6px">Deleted entries stay here until you remove them for good. They don’t count in any totals.</p>
+      <ul class="book" id="trash"></ul>
+      <button class="danger" id="emptytrash" hidden>Empty trash</button>
+    </div>
+  </section>
+
+  <section id="v-people" hidden>
+    <div class="seg s2 ptabs" role="tablist" aria-label="People or deals"><button type="button" role="tab" data-pt="contacts">People</button><button type="button" role="tab" data-pt="deals">Deals<span class="dcount" id="pt-dn" hidden></span></button></div>
+    <div class="card" id="pt-deals" hidden>
+      <div class="phead" style="margin-bottom:6px"><h2 style="margin:0">Deals</h2><button class="linkbtn" id="adddeal2">+ New deal</button></div>
+      <div class="seg s2" role="group" aria-label="Which deals" id="pt-df"><button type="button" data-df="open">Open</button><button type="button" data-df="all">All</button></div>
+      <div id="alldeals"></div>
+    </div>
+    <div class="card" id="pt-contacts">
+      <div class="phead" style="margin-bottom:8px"><h2 style="margin:0">People and shops</h2><button class="linkbtn" id="addcontact">+ Add</button></div>
+      <input class="field" type="search" id="psearch" placeholder="Search name or mobile" autocomplete="off" aria-label="Search people and shops">
+      <div id="contacts"></div>
+    </div>
+  </section>
+
+  <section id="v-sum" hidden>
+    <div class="card" id="dealcard"><h2>Deals and balances</h2><div id="deals"></div></div>
+    <div class="card viz"><h2>Total cost</h2><div id="costsplit"></div>
+      <span class="lbl" style="margin-top:14px">Share of total</span>
+      <div class="gbar" id="gbar" role="img"></div><div class="lg" id="glegend"></div></div>
+    <div class="card viz">
+      <div class="phead"><h2 style="margin:0">Spending by month</h2><button class="linkbtn" id="mtoggle">Show table</button></div>
+      <div class="chartwrap" id="mchart" style="margin-top:14px"></div>
+      <div class="mlegend" id="mlg"></div>
+      <div id="mtable" hidden></div>
+      <p class="hint" id="mnote"></p>
+    </div>
+    <div class="card">
+      <h2>Cash and online</h2>
+      <div class="bar" id="mbar"></div>
+      <div class="legend" id="mlegend"></div>
+    </div>
+    <div class="card"><h2>Where the money went</h2><div id="byitem"></div></div>
+  </section>
+</main>
+
+<div class="selbar" id="selbar" hidden><div>
+  <span class="grow"><span id="sel-n">0 selected</span><span class="num" id="sel-t">₹0</span></span>
+  <button class="del" id="sel-del" aria-label="Move selected entries to trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></button>
+  <button class="go" id="sel-share">Share receipt</button>
+  <button class="cl" id="sel-x" aria-label="Stop selecting">×</button>
+</div></div>
+<nav class="tabs" aria-label="Sections"><div>
+  <button data-go="add" aria-current="page"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Add</button>
+  <button data-go="book"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg>Passbook</button>
+  <button data-go="people"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2a4.5 4.5 0 0 1 5 4.8"/></svg>People</button>
+  <button data-go="sum"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Summary</button>
+</div></nav>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

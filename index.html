@@ -70,6 +70,20 @@ button{cursor:pointer}
 .hero .split{text-align:right;font-size:14px;color:var(--muted);line-height:1.5}
 .hero .split b{font-weight:600;color:var(--ink)}
 .status{font-size:12px;color:var(--muted);padding:0 16px 10px}
+/* total card: dark banner in both themes so it never looks like a box to type in */
+.hero{background:#1C2B3A;color:#fff;box-shadow:0 6px 18px rgba(28,43,58,.18)}
+:root[data-theme="dark"] .hero{background:#26384A;box-shadow:inset 0 0 0 1px #3A4E62}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hero{background:#26384A;box-shadow:inset 0 0 0 1px #3A4E62}}
+.hero h1{color:rgba(255,255,255,.78)}
+.hero .big{color:#F2B705}
+.hero .split,.hero .w,.hero .status{color:rgba(255,255,255,.72)}
+.hero .split b{color:#fff}
+#addcard{box-shadow:inset 4px 0 0 var(--tape)}
+#addcard h2{display:flex;align-items:center;gap:8px}
+#addcard h2::before{content:"+";display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--tape);color:var(--tape-ink);font-size:20px;font-weight:600;line-height:1}
+.selbar .del{border:0;background:transparent;color:var(--card);width:40px;height:40px;display:grid;place-items:center;border-radius:10px}
+.selbar .del svg{width:20px;height:20px}
+.selbar .del:disabled{opacity:.4}
 
 /* card + form */
 .card{background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:14px}
@@ -493,7 +507,7 @@ nav.tabs button[aria-current="page"] svg{background:var(--warn-bg);stroke:var(--
       <p class="pmeta" style="margin:0">Adds Property Estimates to your home screen. It then opens like a normal app and works without internet.</p>
       <button class="primary" id="install">Install app</button>
     </div>
-    <div class="card" id="addcard"><h2>New entry</h2><div id="addform"></div></div>
+    <div class="card" id="addcard"><h2>Add new entry</h2><div id="addform"></div></div>
     <div class="card">
       <h2>Latest entries</h2>
       <ul class="book" id="recent"></ul>
@@ -575,6 +589,7 @@ nav.tabs button[aria-current="page"] svg{background:var(--warn-bg);stroke:var(--
 
 <div class="selbar" id="selbar" hidden><div>
   <span class="grow"><span id="sel-n">0 selected</span><span class="num" id="sel-t">₹0</span></span>
+  <button class="del" id="sel-del" aria-label="Move selected entries to trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></button>
   <button class="go" id="sel-share">Share receipt</button>
   <button class="cl" id="sel-x" aria-label="Stop selecting">×</button>
 </div></div>
@@ -691,7 +706,7 @@ function rebuild(){
 function emit(){rebuild();renderAll();[...SHEETS].forEach(s=>{if(s.open&&s.refresh)try{keepScroll(s,s.refresh)}catch(err){console.error(err)}})}
 const itemName=e=>IM.get(e.item)?.n||(e.item?(e.itemName||"Other"):null);
 const groupOf=e=>e.item&&IM.has(e.item)?IM.get(e.item).cat:"none";
-const kindOf=e=>GM.get(groupOf(e))?.kind||null;
+const kindOf=e=>GM.get(groupOf(e))?.kind||e.kind||null;
 const inView=e=>VIEW==="all"||kindOf(e)===VIEW;
 const viewGroups=()=>D.groups.filter(g=>VIEW==="all"||g.kind===VIEW);
 const gName=k=>k==="none"?"Item not set":(GM.get(k)?.n||"Other");
@@ -823,7 +838,7 @@ function bindDeals(root){
   $$("[data-dmore]",root).forEach(b=>b.addEventListener("click",()=>{const box=b.closest(".dpays");const open=b.dataset.open!=="1";
     $$(".more5",box).forEach(li=>li.hidden=!open);b.dataset.open=open?"1":"";b.textContent=open?"Show fewer":`Show all ${$$("li",box).length}`}));
   const find=b=>D.deals.find(x=>x.id===b.dataset.de||x.id===b.dataset.dp||x.id===b.dataset.dd||x.id===b.dataset.ds);
-  $$("[data-ds]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(!d)return;const ids=LIVE.filter(e=>e.dealId===d.id).map(e=>e.id);
+  $$("[data-ds]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(!d)return;const ids=D.entries.filter(e=>!e.deletedAt&&e.projectId===D.pid&&e.dealId===d.id).map(e=>e.id);
     if(!ids.length){toast("No payments in this deal yet. Add one to share a receipt.");return}openReceipt(ids,{deal:true})}));
   $$("[data-de]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(d)openDealForm(d)}));
   $$("[data-dd]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(d)deleteDeal(d)}));
@@ -1322,6 +1337,8 @@ function makeForm(root,{entry,onDone,onCancel}){
         vendor:ct?ct.name:"",contactId:ct?ct.id:null,note:f("note").value.trim(),
         slipKey:entry?.slipKey||null,createdAt:entry?.createdAt||Date.now(),updatedAt:Date.now()};
       delete e.itemName;if(others.length)e.others=others;else delete e.others;
+      // made while Construction or Documents is picked at the top: keep it there even with no item
+      if(!e.kind&&VIEW!=="all")e.kind=VIEW;
       if(st.dealId&&!f("dealWrap").hidden)e.dealId=st.dealId;else delete e.dealId;
       if(f("when").value){const [y,mo,dd]=f("when").value.split("-").map(Number);const n=new Date(entry?entry.ts:Date.now());n.setFullYear(y,mo-1,dd);if(isFinite(n.getTime()))e.ts=n.getTime()}
       const oldKey=entry?.slipKey;if(st.removeSlip)e.slipKey=null;
@@ -1357,6 +1374,7 @@ function openPaySheet({deal,contact}={}){
 function resetAdd(){addForm=makeForm($("#addform"),{onDone:resetAdd})}
 function openEdit(id){openView(id,{edit:true})}
 async function trashWithUndo(e,after){
+  if(!await ask("Move this entry to trash?",`${[itemName(e)||e.vendor||e.note||"Entry",money(e.amount),fdate(e.ts)].join(" · ")}. You can restore it from Trash.`,{ok:"Move to trash",danger:true}))return;
   try{await trashIt(e);after&&after();toast("Moved to trash",{label:"Undo",fn:async()=>{const x=D.entries.find(y=>y.id===e.id);if(x){await restoreIt(x);toast("Entry restored")}}})}
   catch{toast("Couldn’t move to trash. Try again.")}
 }
@@ -2018,13 +2036,20 @@ function paintSel(){
   if(!on)return;
   const es=LIVE.filter(e=>PB.sel.has(e.id));
   $("#sel-n").textContent=es.length?`${es.length} selected`:"Tap entries to select";
-  $("#sel-t").textContent=money(sums(es).t);$("#sel-share").disabled=!es.length;
+  $("#sel-t").textContent=money(sums(es).t);$("#sel-share").disabled=!es.length;$("#sel-del").disabled=!es.length;
 }
 $("#selbtn").addEventListener("click",()=>{PB.sel=PB.sel?null:new Set();renderBook()});
 $("#selall").addEventListener("click",()=>{if(!PB.sel)return;const ids=(PB.list||[]).map(e=>e.id);
   const all=ids.every(id=>PB.sel.has(id));ids.forEach(id=>all?PB.sel.delete(id):PB.sel.add(id));renderBook()});
 $("#sel-x").addEventListener("click",()=>{PB.sel=null;renderBook()});
 $("#sel-share").addEventListener("click",()=>{if(PB.sel&&PB.sel.size)openReceipt([...PB.sel])});
+$("#sel-del").addEventListener("click",async()=>{
+  const es=PB.sel?LIVE.filter(e=>PB.sel.has(e.id)):[];if(!es.length)return;
+  if(!await ask(`Move ${plural(es.length,"entry","entries")} to trash?`,`${money(sums(es).t)} in total. You can restore them from Trash.`,{ok:"Move to trash",danger:true}))return;
+  try{for(const e of es)await trashIt(e);PB.sel=null;renderBook();
+    toast(`${plural(es.length,"entry","entries")} moved to trash`,{label:"Undo",fn:async()=>{for(const e of es){const x=D.entries.find(y=>y.id===e.id);if(x&&x.deletedAt)await restoreIt(x)}toast("Entries restored")}})}
+  catch{toast("Couldn’t move to trash. Try again.")}
+});
 
 /* ---------- receipt image ---------- */
 const personOf=e=>e.contactId?"c:"+e.contactId:personKey(e)?"n:"+personKey(e):"";
@@ -2117,7 +2142,7 @@ async function makeReceipt(sel,{history,slips,deal}){
   return{blob,single,who,total:t.t,first,last,count:es.length};
 }
 function openReceipt(ids,force={}){
-  const es=LIVE.filter(e=>ids.includes(e.id));if(!es.length){toast("Pick at least one entry");return}
+  const es=D.entries.filter(e=>!e.deletedAt&&e.projectId===D.pid&&ids.includes(e.id)).sort((a,b)=>b.ts-a.ts);if(!es.length){toast("Pick at least one entry");return}
   const pk=personOf(es[0]),single=!!pk&&es.every(e=>personOf(e)===pk);
   const slips=es.filter(e=>attachCount(e));
   const nAtt=es.reduce((a,e)=>a+attachCount(e),0);

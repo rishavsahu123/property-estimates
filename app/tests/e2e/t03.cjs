@@ -1,0 +1,44 @@
+// PDF export test: seed entries with 3 slips into the v2 app, export PDF from Summary and from a filtered passbook.
+const { chromium } = require('playwright');
+const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
+const URL = 'http://localhost:8090/';
+(async () => {
+  const browser = await chromium.launch();
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block', acceptDownloads: true });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push('pageerror: ' + e.message));
+  page.on('console', m => { if (m.type() === 'error' && !/ERR_TUNNEL/.test(m.text())) errors.push('console: ' + m.text()); });
+  await page.goto(URL); await page.waitForSelector('#boot', { state: 'detached' });
+  await page.evaluate(async () => {
+    const db = await new Promise(res => { const q = indexedDB.open('ghar-hisaab', 2); q.onsuccess = () => res(q.result) });
+    const pid = (await new Promise(res => { const q = db.transaction('projects').objectStore('projects').getAll(); q.onsuccess = () => res(q.result) }))[0].id;
+    const mk = async (w, h, col, label) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.fillStyle = col; g.fillRect(0, 0, w, h); g.fillStyle = '#000'; g.font = '60px sans-serif'; g.fillText(label, 40, h / 2); for (let i = 0; i < 12; i++) { g.fillText('Item line ' + i + '  Rs 1,250', 40, 100 + i * 70) } return new Promise(r => c.toBlob(r, 'image/jpeg', .8)); };
+    const b1 = await mk(1200, 1600, '#f4e9c8', 'CEMENT SLIP'), b2 = await mk(1600, 1000, '#d8ecf4', 'BRICK BILL'), b3 = await mk(1000, 1600, '#e9f4d8', 'SARIA BILL');
+    const tx = db.transaction(['entries', 'slips', 'contacts'], 'readwrite');
+    const E = tx.objectStore('entries'), S = tx.objectStore('slips'), C = tx.objectStore('contacts');
+    S.put(b1, 's1');
+    S.put(b2, 's2');
+    S.put(b3, 's3');
+    C.put({ id: 'c1', name: 'Sharma Cement Store', phone: '9826012345', createdAt: 1, updatedAt: 1 });
+    C.put({ id: 'c2', name: 'Ramesh Thekedar', phone: '9893000000', createdAt: 1, updatedAt: 1 });
+    const d = (m, dd) => new Date(2026, m - 1, dd, 11).getTime();
+    const base = { projectId: pid, createdAt: 1, updatedAt: 1, note: '', qty: null, unit: null, rate: null, slipKey: null, contactId: null, vendor: '' };
+    E.put({ ...base, id: 'a1', ts: d(10, 27), item: 'cement', qty: 50, unit: 'bag', rate: 303, amount: 15150, cash: 10000, online: 5150, vendor: 'Sharma Cement Store', contactId: 'c1', note: 'slip kept in book', slipKey: 's1' });
+    E.put({ ...base, id: 'a2', ts: d(10, 25), item: 'brick', qty: 1000, unit: 'piece', rate: 6, amount: 6000, cash: 6000, online: 0, slipKey: 's2' });
+    E.put({ ...base, id: 'a3', ts: d(10, 22), item: 'tmt', qty: 1.2, unit: 'ton', rate: 58000, amount: 69600, cash: 0, online: 69600, slipKey: 's3' });
+    for (let i = 0; i < 40; i++) E.put({ ...base, id: 't' + i, ts: d(9, 1) + i * 864e5, item: 'thekedar', amount: 5000 + i * 100, cash: 5000 + i * 100, online: 0, vendor: 'Ramesh Thekedar', contactId: 'c2', note: i % 5 ? '' : 'weekly payment for labour, includes extra for roof shuttering work' });
+    E.put({ ...base, id: 'r1', ts: d(8, 15), item: 'registry', amount: 80000, cash: 0, online: 80000 });
+    await new Promise(r => tx.oncomplete = r); db.close();
+  });
+  await page.reload(); await page.waitForSelector('#boot', { state: 'detached' });
+  await page.click('nav [data-go="sum"]');
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 20000 }), page.click('#m-down-b').then(()=>page.click('#pdf'))]);
+  await dl.saveAs(OUT + '/full.pdf');
+  await page.click('nav [data-go="book"]');
+  await page.click('#openfilters'); await page.click('.sheet [data-fi="cement"]'); await page.click('.sheet [data-fi="tmt"]'); await page.click('.sheet [data-w="apply"]');
+  const [dl2] = await Promise.all([page.waitForEvent('download', { timeout: 20000 }), page.click('#bookpdf')]);
+  await dl2.saveAs(OUT + '/filtered.pdf');
+  console.log(JSON.stringify({ name: dl.suggestedFilename(), name2: dl2.suggestedFilename(), errors }));
+  await browser.close();
+})().catch(e => { console.error('FAIL', e); process.exit(1); });

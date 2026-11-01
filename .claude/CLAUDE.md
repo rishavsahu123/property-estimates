@@ -10,7 +10,7 @@ Planned for Google Play / App Store later with a subscription (see roadmap.md).
 ## Files
 - `index.html` — the whole app: HTML, CSS and JS in one file, no framework, no build step.
 - `sw.js` — service worker: cache-first for the app shell, network-first for index.html.
-  **Bump `const V` on every change to any file** (currently pe-v2.10.0).
+  **Bump `const V` on every change to any file** (currently pe-v2.10.1).
 - `manifest.webmanifest` — name "Property Estimates", short name "Estimates".
 - `exceljs.min.js` (ExcelJS 4.4.0) and `jspdf.umd.min.js` (jsPDF 2.5.2) — loaded lazily, cached by the SW.
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`.
@@ -35,7 +35,14 @@ Planned for Google Play / App Store later with a subscription (see roadmap.md).
   "ghar-ka-hisaab" app id.
 - localStorage keys: pe-project, pe-view, pe-theme, ghk-mode, ghk-backup.
 
+## TypeScript app (Phase 1, in app/)
+- The source of truth is moving to `app/` (see app/README.md). Root index.html/sw.js are the old live JS app until Pages is switched to GitHub Actions.
+- Make new changes in `app/src`. Run `npm test`, then `npm run e2e`. Don't bump versions by hand: the build names the SW cache.
+- Tests poke state through `window.__pe` (D, SHEETS, dealAgreed).
+
 ## Features in place
+- v2.10.1: entries made while Construction/Documents is picked get `kind` (used when the item gives none), so they stay in that view. Deleting an entry asks first. Select mode can move many entries to trash, with Undo. Receipts use every payment in the project, whatever the view. The total card is a dark banner, and "Add new entry" has a yellow marker.
+- Workflow: change the root index.html, then run `python3 split.py` (cloud scratchpad) to regenerate app/src/legacy/app.ts, app.css and index.html until the screens are split into typed modules.
 
 - v2.10.0: confirm boxes are the app's own `ask(title,msg,{ok,danger})` (Promise<boolean>; no native confirm/alert anywhere; back button and Escape cancel).
 - People page has tabs People | Deals (`PTAB`, saved in pe-ptab). Deals tab lists all deals (Open/All), "+ New deal" asks who the deal is with. Contact rows show a "N deals" badge.

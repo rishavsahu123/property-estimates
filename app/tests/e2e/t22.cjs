@@ -1,0 +1,32 @@
+// Filter dropdown with every name; share button on a deal.
+const { chromium } = require('playwright');
+const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
+(async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,serviceWorkers:'block'});const p=await ctx.newPage();
+const errors=[],r={};p.on('pageerror',e=>errors.push(e.message));
+await p.goto('http://localhost:8090/?t='+Date.now());await p.waitForSelector('#boot',{state:'detached'});
+await p.evaluate(async()=>{const db=await new Promise(res=>{const q=indexedDB.open('ghar-hisaab',2);q.onsuccess=()=>res(q.result)});
+ const pid=(await new Promise(res=>{const q=db.transaction('projects').objectStore('projects').getAll();q.onsuccess=()=>res(q.result)}))[0].id;
+ const tx=db.transaction(['entries','contacts','meta'],'readwrite');const E=tx.objectStore('entries'),C=tx.objectStore('contacts');
+ const names=['Aman','Bholu','Chotu','Dinesh','Eshan','Farid','Gopal','Hari','Imran','Jatin','Kamal','Lalit'];
+ names.forEach((n,i)=>C.put({id:'c'+i,name:n,phone:'',createdAt:1,updatedAt:1}));
+ C.put({id:'cz',name:'Zero entries guy',phone:'',createdAt:1,updatedAt:1});
+ const base={projectId:pid,createdAt:1,updatedAt:1,note:'',qty:null,unit:null,rate:null,slipKey:null};
+ names.forEach((n,i)=>{for(let j=0;j<(i===11?1:5);j++)E.put({...base,id:'e'+i+'_'+j,ts:Date.now()-(i*10+j)*864e5,item:'thekedar',amount:1000,cash:1000,online:0,vendor:n,contactId:'c'+i,dealId:i===0?'d1':undefined})});
+ tx.objectStore('meta').put([{id:'d1',projectId:pid,contactId:'c0',item:'thekedar',title:'Labour',type:'fixed',amount:20000,fields:[]}],'deals');
+ await new Promise(r=>tx.oncomplete=r);db.close()});
+await p.reload();await p.waitForSelector('#boot',{state:'detached'});
+await p.click('nav [data-go="book"]');await p.click('#openfilters');
+r.options=await p.$$eval('#fp-sel option',o=>o.map(x=>x.textContent));
+await p.selectOption('#fp-sel','lalit');await p.selectOption('#fp-sel','zero entries guy');
+r.chips=await p.$$eval('#fp-on .chip',c=>c.map(x=>x.textContent));r.apply=await p.textContent('.sheet [data-w="apply"]');
+await p.screenshot({path:OUT + '/m1-filter.png'});
+await p.click('#fp-on [data-fp="zero entries guy"]');r.chipsAfter=await p.$$eval('#fp-on .chip',c=>c.map(x=>x.textContent));
+await p.click('.sheet [data-w="apply"]');r.count=await p.textContent('#b-count');r.tags=await p.$$eval('#ftags .ftag',t=>t.map(x=>x.textContent.trim()));
+// deal share
+await p.click('nav [data-go="people"]');await p.click('[data-pt="deals"]');
+await p.screenshot({path:OUT + '/m2-deal.png'});
+await p.click('#alldeals [data-ds]');
+await p.waitForFunction(()=>{const i=document.querySelector('#rc-img');return i&&i.complete&&i.naturalWidth>0});
+r.dealChecked=await p.$eval('#rc-d',x=>x.checked);r.img=await p.$eval('#rc-img',i=>[i.naturalWidth,i.naturalHeight]);
+await p.screenshot({path:OUT + '/m3-share.png'});
+r.errors=errors;console.log(JSON.stringify(r,null,1));await b.close()})().catch(e=>{console.error('FAIL',e);process.exit(1)});

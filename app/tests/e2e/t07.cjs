@@ -1,0 +1,26 @@
+const { chromium } = require('playwright');
+const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
+const URL = 'http://localhost:8090/';
+(async () => {
+  const browser = await chromium.launch();
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, serviceWorkers: 'block', acceptDownloads: true });
+  const page = await ctx.newPage(); const errors = [], r = {};
+  page.on('pageerror', e => errors.push(e.message)); page.on('dialog', d => d.accept());
+  await page.goto(URL + '?t=' + Date.now()); await page.waitForSelector('#boot', { state: 'detached' });
+  await page.fill('#addform [data-f="amount"]', '1250300'); r.typed = await page.textContent('#addform [data-f="words"]');
+  await page.screenshot({ path: 'w1-form.png', clip: { x: 0, y: 200, width: 390, height: 260 } });
+  await page.fill('#addform [data-f="vendor"]', 'Ramesh Thekedar'); await page.selectOption('#addform select[data-g="people"]', 'thekedar');
+  await page.click('#addform [data-f="save"]'); await page.waitForTimeout(300);
+  r.cleared = await page.textContent('#addform [data-f="words"]');
+  await page.selectOption('#addform select[data-g="material"]', 'cement'); await page.fill('#addform [data-f="qty"]', '50'); await page.fill('#addform [data-f="rate"]', '290');
+  r.auto = await page.textContent('#addform [data-f="words"]');
+  await page.click('#addform [data-f="save"]'); await page.waitForTimeout(300);
+  r.hero = await page.textContent('#h-words');
+  await page.click('nav [data-go="book"]'); r.book = await page.textContent('#b-words');
+  r.rows = await page.$$eval('#book .w', w => w.map(x => x.textContent));
+  await page.screenshot({ path: 'w2-book.png' });
+  await page.click('#selbtn'); await page.click('#book .entry >> nth=0'); await page.click('#book .entry >> nth=1'); await page.click('#sel-share');
+  await page.waitForFunction(() => { const i = document.querySelector('#rc-img'); return i && i.complete && i.naturalWidth > 0 });
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#rc-save')]); await dl.saveAs('w-receipt.png');
+  r.errors = errors; console.log(JSON.stringify(r, null, 1)); await browser.close();
+})().catch(e => { console.error('FAIL', e); process.exit(1) });
