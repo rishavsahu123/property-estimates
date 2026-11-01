@@ -392,6 +392,21 @@ svg.mchart text{font-family:Hind,"Noto Sans",system-ui,sans-serif}
 /* people list */
 .crow{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;width:100%;text-align:left;border:0;background:none;padding:11px 2px;border-bottom:1px solid var(--rule)}
 .crow:last-child{border-bottom:0}
+.cdlg-bg{position:fixed;inset:0;z-index:95;background:var(--shade);display:grid;place-items:center;padding:16px;animation:cdin .12s ease-out}
+.cdlg{background:var(--card);color:var(--ink);border-radius:18px;width:100%;max-width:380px;padding:20px 18px 14px;box-shadow:0 22px 60px rgba(0,0,0,.3)}
+.cdlg h3{margin:0;font-size:19px;font-weight:600;line-height:1.3}
+.cdlg p{margin:8px 0 0;color:var(--muted);font-size:15px;line-height:1.45}
+.cdlg .cbtns{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.cdlg .cbtns button{min-width:96px;padding:10px 16px;border-radius:12px;font:600 15px Hind,system-ui,sans-serif;border:1.5px solid var(--rule);background:var(--field);color:var(--ink)}
+.cdlg .cbtns .ok{background:var(--ink);border-color:var(--ink);color:var(--card)}
+.cdlg .cbtns .ok.red{background:var(--debit);border-color:var(--debit);color:var(--card)}
+@keyframes cdin{from{opacity:0}to{opacity:1}}
+.ptabs{margin:0 0 12px}
+.dcount{display:inline-block;margin-left:6px;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--warn-bg);color:var(--warn-ink);vertical-align:2px}
+.ptabs .dcount{background:transparent;color:inherit;border:1px solid currentColor;padding:0 6px}
+.crow b .dcount{white-space:nowrap}
+.wholink{display:inline-flex;align-items:center;gap:4px;border:0;background:none;padding:0;margin-top:2px;color:var(--online);font:600 14px Hind,system-ui,sans-serif}
+.due.sal{background:transparent;color:var(--muted);box-shadow:inset 0 0 0 1.5px var(--rule);font-weight:500}
 .crow b{display:block;font-weight:600;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .crow small{display:block;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .crow .num{font-size:24px;text-align:right;white-space:nowrap}
@@ -524,7 +539,13 @@ nav.tabs button[aria-current="page"] svg{background:var(--warn-bg);stroke:var(--
   </section>
 
   <section id="v-people" hidden>
-    <div class="card">
+    <div class="seg s2 ptabs" role="tablist" aria-label="People or deals"><button type="button" role="tab" data-pt="contacts">People</button><button type="button" role="tab" data-pt="deals">Deals<span class="dcount" id="pt-dn" hidden></span></button></div>
+    <div class="card" id="pt-deals" hidden>
+      <div class="phead" style="margin-bottom:6px"><h2 style="margin:0">Deals</h2><button class="linkbtn" id="adddeal2">+ New deal</button></div>
+      <div class="seg s2" role="group" aria-label="Which deals" id="pt-df"><button type="button" data-df="open">Open</button><button type="button" data-df="all">All</button></div>
+      <div id="alldeals"></div>
+    </div>
+    <div class="card" id="pt-contacts">
       <div class="phead" style="margin-bottom:8px"><h2 style="margin:0">People and shops</h2><button class="linkbtn" id="addcontact">+ Add</button></div>
       <input class="field" type="search" id="psearch" placeholder="Search name or mobile" autocomplete="off" aria-label="Search people and shops">
       <div id="contacts"></div>
@@ -613,6 +634,26 @@ function inWords(v){const a=Math.round(Math.abs(+v||0)*100),r=Math.floor(a/100),
 function toast(msg,act){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=msg;
   if(act){const b=document.createElement("button");b.className="tact";b.textContent=act.label;b.addEventListener("click",()=>{t.remove();act.fn()});t.appendChild(b)}
   document.body.appendChild(t);setTimeout(()=>t.remove(),act?5000:2600)}
+// Our own confirm box (looks like the app; no "localhost says" title). Resolves true or false.
+let DLG=null;
+function ask(title,msg,{ok="OK",cancel="Cancel",danger=false}={}){return new Promise(res=>{
+  if(DLG)DLG.close(false);
+  const bg=document.createElement("div");bg.className="cdlg-bg";
+  bg.innerHTML=`<div class="cdlg" role="alertdialog" aria-modal="true" aria-labelledby="cdlg-t"${msg?' aria-describedby="cdlg-m"':""}><h3 id="cdlg-t">${esc(title)}</h3>${msg?`<p id="cdlg-m">${esc(msg)}</p>`:""}<div class="cbtns"><button type="button" data-no>${esc(cancel)}</button><button type="button" class="ok${danger?" red":""}" data-ok>${esc(ok)}</button></div></div>`;
+  const prev=document.activeElement,btns=[...bg.querySelectorAll("button")];
+  const key=ev=>{if(ev.key==="Escape"){ev.preventDefault();ev.stopPropagation();close(false)}
+    else if(ev.key==="Tab"){ev.preventDefault();const i=btns.indexOf(document.activeElement);btns[(i+(ev.shiftKey?-1:1)+btns.length)%btns.length].focus()}};
+  function close(v,fromBack){if(DLG!==me)return;DLG=null;bg.remove();document.removeEventListener("keydown",key,true);
+    if(!fromBack&&history.state&&history.state.peDlg){popSkip++;history.back()}
+    try{prev&&prev.focus&&prev.focus({preventScroll:true})}catch{}res(v)}
+  const me={close};DLG=me;
+  bg.addEventListener("click",ev=>{if(ev.target===bg)close(false)});
+  bg.querySelector("[data-no]").addEventListener("click",()=>close(false));
+  bg.querySelector("[data-ok]").addEventListener("click",()=>close(true));
+  document.addEventListener("keydown",key,true);document.body.appendChild(bg);
+  try{history.pushState({peDlg:1},"",location.href)}catch{}
+  bg.querySelector(danger?"[data-no]":"[data-ok]").focus();
+})}
 function lget(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch{return d}}
 function lset(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 
@@ -729,26 +770,44 @@ function normDeal(d){
   if(!d.type){d.type="fixed";return true}
   return false;
 }
-const dealAgreed=d=>{if(d.type==="calc"){const m=mulFields(d);return m.length?round2(m.reduce((a,f)=>a*numVal(f.value),1)):0}return round2(+d.amount||0)};
+// monthly salary: counted day by day from the start date, one month at a time (23 Oct → 22 Nov is month 1)
+const addMonths=(dt,n)=>{const d=new Date(dt),day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+n);d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));return d};
+function salaryCalc(d,at=Date.now()){
+  const amt=+d.amount||0;if(!d.start)return{earned:0,months:0,days:0,next:null,ended:false,started:false};
+  const s=new Date(d.start+"T00:00:00"),endD=d.end?new Date(d.end+"T00:00:00"):null;
+  let end=new Date(at);end.setHours(0,0,0,0);const ended=!!endD&&endD<=end;if(ended)end=endD;
+  if(end<s)return{earned:0,months:0,days:0,next:addMonths(s,1),ended,started:false};
+  let m=0;while(addMonths(s,m+1)<=end)m++;
+  const ps=addMonths(s,m),pe=addMonths(s,m+1),pd=Math.round((pe-ps)/864e5);
+  let days=Math.round((end-ps)/864e5)+1;const earned=round2(amt*m+amt*days/pd);
+  if(days>=pd){m++;days=0}
+  return{earned,months:m,days,next:addMonths(s,m+1),ended,started:true};
+}
+const workedText=d=>{const c=salaryCalc(d);if(!c.started)return`Starts ${shortDay(d.start)}`;const p=[c.months?plural(c.months,"month","months"):"",c.days?plural(c.days,"day","days"):""].filter(Boolean).join(" ");return `${p||"0 days"} worked`};
+const isMonthly=d=>d&&d.type==="monthly";
+const agLabel=d=>isMonthly(d)?(d.end&&salaryCalc(d).ended?"Earned":"Earned till today"):"Agreed";
+const dealAgreed=(d,at)=>{if(d.type==="monthly")return salaryCalc(d,at).earned;if(d.type==="calc"){const m=mulFields(d);return m.length?round2(m.reduce((a,f)=>a*numVal(f.value),1)):0}return round2(+d.amount||0)};
 const dealPaid=(d,upto=Infinity,skip)=>round2(D.entries.filter(e=>!e.deletedAt&&e.dealId===d.id&&e.ts<=upto&&e.id!==skip).reduce((a,e)=>a+(+e.amount||0),0));
 const dealBal=d=>round2(dealAgreed(d)-dealPaid(d));
 const dealInView=d=>{if(VIEW==="all")return true;const it=IM.get(d.item),k=it&&GM.get(it.cat)?.kind;return !k||k===VIEW};
-const dealFormula=d=>d.type==="calc"?(mulFields(d).map(f=>`${String(f.label||"").trim()||"Value"} ${numfmt.format(numVal(f.value))}`).join(" × ")||"No number fields to multiply"):"Fixed amount";
+const dealFormula=d=>d.type==="monthly"?`${money(+d.amount||0)} a month from ${d.start?shortDay(d.start):"?"}${d.end?` to ${shortDay(d.end)}`:""}`:d.type==="calc"?(mulFields(d).map(f=>`${String(f.label||"").trim()||"Value"} ${numfmt.format(numVal(f.value))}`).join(" × ")||"No number fields to multiply"):"Fixed amount";
 const isLate=d=>!!d.deadline&&!d.closed&&dealBal(d)>0&&new Date(d.deadline+"T23:59:59").getTime()<Date.now();
 const dueText=d=>d.deadline?`${isLate(d)?"Overdue, was due":"Due by"} ${shortDay(d.deadline)}`:"";
 const saveDeals=()=>dbPut("meta",D.deals,"deals");
 const termsOf=d=>fieldsOf(d).filter(f=>!mulFields(d).includes(f)).map(f=>({label:String(f.label||"").trim(),value:String(f.value||"").trim()}));
 const termsText=d=>[...termsOf(d).map(t=>t.label?`${t.label}: ${t.value}`:t.value),...(d.deadline?[`Deadline: ${shortDay(d.deadline)}`]:[])];
-const balText=b=>b>=0?money(b):`${money(-b)} over`;
-function dealCard(d,withPays){
+const balText=(b,d)=>b>=0?money(b):`${money(-b)} ${isMonthly(d)?"paid ahead":"over"}`;
+function dealCard(d,withPays,opts={}){
   const ag=dealAgreed(d),pd=dealPaid(d),bal=round2(ag-pd),pct=ag?Math.min(100,Math.round(pd/ag*100)):0,c=CM.get(d.contactId),it=IM.get(d.item);
   return `<div class="deal${d.closed?" done":""}">
-    <div class="dhead"><b>${esc(d.title)}</b><span class="dicons"><button class="ib" data-de="${esc(d.id)}" aria-label="Edit deal ${esc(d.title)}">${ICON.edit}</button><button class="ib red" data-dd="${esc(d.id)}" aria-label="Delete deal ${esc(d.title)}">${ICON.trash}</button></span></div>
-    <small>${esc([dealFormula(d),it?.n,c?.name].filter(Boolean).join(" · "))}</small>
+    <div class="dhead"><b>${esc(d.title)}</b><span class="dicons"><button class="ib" data-ds="${esc(d.id)}" aria-label="Share deal ${esc(d.title)}">${ICON.share}</button><button class="ib" data-de="${esc(d.id)}" aria-label="Edit deal ${esc(d.title)}">${ICON.edit}</button><button class="ib red" data-dd="${esc(d.id)}" aria-label="Delete deal ${esc(d.title)}">${ICON.trash}</button></span></div>
+    ${opts.who&&c?`<button type="button" class="wholink" data-pc="${esc(c.id)}">${esc(c.name)} ›</button>`:""}
+    <small>${esc([dealFormula(d),it?.n,opts.who?"":c?.name].filter(Boolean).join(" · "))}</small>
+    ${isMonthly(d)?`<div class="due sal">${esc(workedText(d))}${!salaryCalc(d).ended&&!d.closed?` · next month’s salary on ${fdate(salaryCalc(d).next)}`:""}</div>`:""}
     ${d.deadline?`<div class="due${isLate(d)?" late":""}">${esc(dueText(d))}</div>`:""}
     ${termsOf(d).length?`<dl class="dterms">${termsOf(d).map(t=>`<div><dt>${esc(t.label||"Term")}</dt><dd>${esc(t.value)}</dd></div>`).join("")}</dl>`:""}
     <div class="dbarw"><div class="dbar" role="img" aria-label="${pct}% paid"><i style="width:${pct}%"></i></div><span class="pc">${d.closed?"Complete":pct+"% paid"}</span></div>
-    <div class="dnums"><span>Agreed<b class="num">${money(ag)}</b></span><span>Paid<b class="num">${money(pd)}</b></span><span>Balance<b class="num${bal<0?" over":""}">${balText(bal)}</b></span></div>
+    <div class="dnums"><span>${agLabel(d)}<b class="num">${money(ag)}</b></span><span>Paid<b class="num">${money(pd)}</b></span><span>${isMonthly(d)&&bal>0?"Due now":"Balance"}<b class="num${bal<0&&!isMonthly(d)?" over":""}">${balText(bal,d)}</b></span></div>
     ${withPays?dealPays(d):""}
     ${d.closed?"":`<div class="pact"><button class="linkbtn" data-dp="${esc(d.id)}">+ Add payment</button></div>`}</div>`;
 }
@@ -763,14 +822,16 @@ function dealPays(d){
 function bindDeals(root){
   $$("[data-dmore]",root).forEach(b=>b.addEventListener("click",()=>{const box=b.closest(".dpays");const open=b.dataset.open!=="1";
     $$(".more5",box).forEach(li=>li.hidden=!open);b.dataset.open=open?"1":"";b.textContent=open?"Show fewer":`Show all ${$$("li",box).length}`}));
-  const find=b=>D.deals.find(x=>x.id===b.dataset.de||x.id===b.dataset.dp||x.id===b.dataset.dd);
+  const find=b=>D.deals.find(x=>x.id===b.dataset.de||x.id===b.dataset.dp||x.id===b.dataset.dd||x.id===b.dataset.ds);
+  $$("[data-ds]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(!d)return;const ids=LIVE.filter(e=>e.dealId===d.id).map(e=>e.id);
+    if(!ids.length){toast("No payments in this deal yet. Add one to share a receipt.");return}openReceipt(ids,{deal:true})}));
   $$("[data-de]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(d)openDealForm(d)}));
   $$("[data-dd]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(d)deleteDeal(d)}));
   $$("[data-dp]",root).forEach(b=>b.addEventListener("click",()=>{const d=find(b);if(d)openPaySheet({deal:d})}));
 }
 async function deleteDeal(d,after){
   const linked=D.entries.filter(e=>e.dealId===d.id&&!e.deletedAt).length;
-  if(!confirm(`Delete the deal “${d.title}”?${linked?` Its ${plural(linked,"payment","payments")} stay in the passbook but won’t be linked to a deal.`:""}`))return false;
+  if(!await ask(`Delete the deal “${d.title}”?`,linked?`${linked===1?"Its 1 payment stays":`Its ${linked} payments stay`} in the passbook but won’t be linked to a deal.`:"This can’t be undone.",{ok:"Delete",danger:true}))return false;
   for(const e of D.entries.filter(e=>e.dealId===d.id)){delete e.dealId;e.updatedAt=Date.now();await dbPut("entries",e)}
   D.deals=D.deals.filter(x=>x.id!==d.id);await saveDeals();after&&after();emit();toast("Deal deleted");return true;
 }
@@ -789,11 +850,18 @@ function dealFormHTML(o){
     <div class="stack" id="dl-fields"></div>
     <div class="chips" id="dl-quick" style="margin-top:8px">${["Rate","Quantity","Unit","Material","Brand","Work"].map(x=>`<button type="button" class="chip sm" data-qf="${x}">+ ${x}</button>`).join("")}</div>
     <span class="lbl">Agreed total</span>
-    <div class="seg s2" role="group" aria-label="Agreed total"><button type="button" data-dt="calc">Multiply fields</button><button type="button" data-dt="fixed">Fixed amount</button></div>
+    <div class="seg" role="group" aria-label="Agreed total"><button type="button" data-dt="calc">Multiply fields</button><button type="button" data-dt="fixed">Fixed amount</button><button type="button" data-dt="monthly">Monthly salary</button></div>
     <div data-w="fixed" style="margin-top:10px"><input class="field" id="dl-a" inputmode="decimal" placeholder="Agreed amount ₹, e.g. 75000" value="${o.amount??""}" aria-label="Agreed amount"></div>
+    <div data-w="monthly" style="margin-top:10px">
+      <input class="field" id="dl-ma" inputmode="decimal" placeholder="Salary per month ₹, e.g. 8000" value="${o.type==="monthly"?(o.amount??""):""}" aria-label="Salary per month">
+      <label class="lbl" for="dl-ms">Started work on</label><input class="field" type="date" id="dl-ms" value="${esc(o.start||localDay())}">
+      <label class="check"><input type="checkbox" id="dl-hase"${o.end?" checked":""}>Stopped working</label>
+      <input class="field" type="date" id="dl-me" value="${esc(o.end||"")}" aria-label="Last working day"${o.end?"":" hidden"}>
+      <p class="hint">Salary is counted day by day from the start date. Pay every month or many months together. Every payment reduces what is due.</p>
+    </div>
     <div class="dtotal"><span class="pmeta" id="dl-how">Agreed total</span><span class="num" id="dl-tot">₹0</span><span class="w" id="dl-words"></span></div>
     <p class="hint" data-w="calc">Number fields with × switched on are multiplied, for example Rate 285 × Quantity 7000. Change any value later and the total and balance update.</p>
-    <label class="check"><input type="checkbox" id="dl-hasd"${o.deadline?" checked":""}>Has a deadline</label>
+    <label class="check" id="dl-hasdw"><input type="checkbox" id="dl-hasd"${o.deadline?" checked":""}>Has a deadline</label>
     <div id="dl-dwrap"${o.deadline?"":" hidden"}>
       <div class="chips" style="margin-top:8px">${[["7d","1 week"],["3m","3 months"],["6m","6 months"],["1y","1 year"],["5y","5 years"]].map(([k,l])=>`<button type="button" class="chip sm" data-dq="${k}">${l}</button>`).join("")}</div>
       <input class="field" type="date" id="dl-date" value="${esc(o.deadline||"")}" style="margin-top:8px" aria-label="Deadline">
@@ -818,13 +886,15 @@ function wireDealForm(root,o){
     $(".x",row).addEventListener("click",()=>{row.remove();paint()});
     q("#dl-fields").appendChild(row);if(focus)(f&&f.label?fv:fl).focus();paint()};
   const rows=()=>$$(".frow",q("#dl-fields")).map(r=>({label:$("[data-fl]",r).value.trim(),value:$("[data-fv]",r).value.trim(),mul:r.dataset.mul==="true",row:r}));
-  const cur=()=>({type,fields:rows().filter(f=>f.value).map(({label,value,mul})=>numVal(value)!=null?{label,value,mul}:{label,value}),amount:pnum(q("#dl-a").value)});
+  const cur=()=>({type,fields:rows().filter(f=>f.value).map(({label,value,mul})=>numVal(value)!=null?{label,value,mul}:{label,value}),amount:pnum(q(type==="monthly"?"#dl-ma":"#dl-a").value),
+    start:q("#dl-ms").value,end:q("#dl-hase").checked?q("#dl-me").value:""});
   function paint(){
     $$("[data-dt]",root).forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.dt===type)));
-    q("[data-w=fixed]").hidden=type!=="fixed";q("[data-w=calc]").hidden=type!=="calc";
+    q("[data-w=fixed]").hidden=type!=="fixed";q("[data-w=calc]").hidden=type!=="calc";q("[data-w=monthly]").hidden=type!=="monthly";
+    q("#dl-hasdw").hidden=type==="monthly";q("#dl-dwrap").hidden=type==="monthly"||!q("#dl-hasd").checked;
     rows().forEach(f=>{const m=$(".mul",f.row),isNum=numVal(f.value)!=null;m.classList.toggle("na",type!=="calc"||!isNum);m.setAttribute("aria-pressed",String(f.mul&&isNum))});
     const c=cur(),t=dealAgreed(c);
-    q("#dl-how").textContent=type==="calc"?(mulFields(c).length?mulFields(c).map(f=>numfmt.format(numVal(f.value))).join(" × ")+" =":"Add number fields to multiply"):"Agreed total";
+    q("#dl-how").textContent=type==="monthly"?(c.amount&&c.start?`${agLabel(c)} (${workedText(c)})`:"Earned till today"):type==="calc"?(mulFields(c).length?mulFields(c).map(f=>numfmt.format(numVal(f.value))).join(" × ")+" =":"Add number fields to multiply"):"Agreed total";
     q("#dl-tot").textContent=money(t);q("#dl-words").textContent=t?inWords(t):"";return t;
   }
   fieldsOf(o).forEach(f=>addField(f));if(!fieldsOf(o).length&&type==="calc")addField();
@@ -832,6 +902,8 @@ function wireDealForm(root,o){
   $$("[data-qf]",root).forEach(b=>b.addEventListener("click",()=>addField({label:b.dataset.qf},true)));
   $$("[data-dt]",root).forEach(b=>b.addEventListener("click",()=>{type=b.dataset.dt;paint();if(type==="fixed")q("#dl-a").focus()}));
   q("#dl-a").addEventListener("input",paint);
+  ["#dl-ma","#dl-ms","#dl-me"].forEach(x=>q(x).addEventListener("input",paint));
+  q("#dl-hase").addEventListener("change",()=>{q("#dl-me").hidden=!q("#dl-hase").checked;if(q("#dl-hase").checked&&!q("#dl-me").value)q("#dl-me").value=localDay();paint()});
   q("#dl-hasd").addEventListener("change",()=>{q("#dl-dwrap").hidden=!q("#dl-hasd").checked});
   // shortcuts count from today
   $$("[data-dq]",root).forEach(b=>b.addEventListener("click",()=>{const d=new Date(),k=b.dataset.dq,n=parseInt(k);
@@ -843,6 +915,14 @@ function wireDealForm(root,o){
   return{item:()=>q("#dl-i").value||null,onItem:fn=>q("#dl-i").addEventListener("change",fn),
     showError(m){const el=q("#dl-msg");el.textContent=m||"";el.hidden=!m;if(m)el.scrollIntoView({block:"nearest",behavior:"smooth"})},
     collect(){const c=cur(),t=dealAgreed(c);
+      if(type==="monthly"){
+        if(!(c.amount>0))return{error:"Enter the salary per month"};
+        if(!c.start)return{error:"Pick the date the work started"};
+        if(q("#dl-hase").checked&&!c.end)return{error:"Pick the last working day"};
+        if(c.end&&c.end<c.start)return{error:"The last working day is before the start date"};
+        const it=q("#dl-i").value||null;
+        const n={title:q("#dl-t").value.trim()||(IM.get(it)?.n)||"Monthly salary",item:it,type,fields:c.fields,note:q("#dl-n").value.trim(),amount:c.amount,start:c.start};
+        if(c.end)n.end=c.end;return{deal:n}}
       if(!(t>0))return{error:type==="calc"?(rows().some(f=>f.value&&numVal(f.value)!=null)?"Switch on × for the numbers to multiply, for example Rate and Quantity":"Add fields with numbers to multiply (for example Rate 285 and Quantity 7000), or choose Fixed amount"):"Enter the agreed amount"};
       if(q("#dl-hasd").checked&&!q("#dl-date").value)return{error:"Pick the deadline date"};
       const it=q("#dl-i").value||null;
@@ -853,23 +933,28 @@ function wireDealForm(root,o){
 }
 function openDealForm(d,{contactId,onSaved}={}){
   const o=d?{...d}:{type:"calc",contactId,projectId:D.pid,fields:[]};
+  const pick=!d&&!contactId;if(pick)fillLists();
   const c=CM.get(o.contactId),linked=d?D.entries.filter(e=>e.dealId===d.id&&!e.deletedAt).length:0;
   const s=openSheet(d?"Edit deal":"New deal",`
-    <p class="pmeta" style="margin:0">${esc(c?`With ${c.name}`:"")}</p>
+    ${pick?`<label class="lbl" for="dl-who" style="margin-top:0">Deal with</label><input class="field" id="dl-who" list="pe-contacts" autocomplete="off" placeholder="Person or shop, e.g. Ramesh (watchman)">`:`<p class="pmeta" style="margin:0">${esc(c?`With ${c.name}`:"")}</p>`}
     ${dealFormHTML(o)}
     ${d?`<label class="check"><input type="checkbox" id="dl-c" ${o.closed?"checked":""}>Deal is complete (hide from new payments)</label>`:`<label class="check" id="dl-ew" hidden><input type="checkbox" id="dl-e"${D.deals.some(x=>x.contactId===o.contactId&&x.projectId===o.projectId)?"":" checked"}><span id="dl-el"></span></label>`}
     <button class="primary" id="dl-save">${d?"Save deal":"Add deal"}</button>
     ${d?'<button class="danger" id="dl-del">Delete deal</button>':""}`);
   const q=x=>$(x,s.body),api=wireDealForm(s.body,o);
   // earlier payments to this person (same item if one is picked) that aren't linked to any deal yet
-  const earlier=()=>{const it=api.item();return D.entries.filter(e=>!e.deletedAt&&!e.dealId&&e.projectId===o.projectId&&e.contactId===o.contactId&&(!it||e.item===it))};
+  const earlier=()=>{const it=api.item();if(!o.contactId)return[];return D.entries.filter(e=>!e.deletedAt&&!e.dealId&&e.projectId===o.projectId&&e.contactId===o.contactId&&(!it||e.item===it))};
   const paintEarlier=()=>{const w=q("#dl-ew");if(!w)return;const es=earlier();w.hidden=!es.length;
-    q("#dl-el").textContent=`Count earlier payments to ${c?.name||"this person"} against this deal (${plural(es.length,"payment","payments")}, ${money(es.reduce((a,e)=>a+(+e.amount||0),0))})`};
-  api.onItem(paintEarlier);paintEarlier();if(!d)setTimeout(()=>q("#dl-t").focus(),50);
+    q("#dl-el").textContent=`Count earlier payments to ${CM.get(o.contactId)?.name||"this person"} against this deal (${plural(es.length,"payment","payments")}, ${money(es.reduce((a,e)=>a+(+e.amount||0),0))})`};
+  api.onItem(paintEarlier);paintEarlier();if(!d)setTimeout(()=>q(pick?"#dl-who":"#dl-t").focus(),50);
+  if(pick)q("#dl-who").addEventListener("input",()=>{const v=q("#dl-who").value.trim().toLowerCase();o.contactId=D.contacts.find(x=>x.name.toLowerCase()===v)?.id;paintEarlier()});
   q("#dl-save").addEventListener("click",async()=>{
-    const r=api.collect();api.showError(r.error);if(r.error){toast(r.error);return}
+    const r=api.collect();if(!r.error&&pick&&!q("#dl-who").value.trim())r.error="Type who the deal is with";
+    api.showError(r.error);if(r.error){toast(r.error);return}
+    if(pick){try{o.contactId=(await upsertContact(q("#dl-who").value,""))?.id}catch{toast("Couldn’t save the contact.");return}}
     const n={...o,...r.deal,id:o.id||newId("d"),updatedAt:Date.now(),createdAt:o.createdAt||Date.now()};
-    if(n.type!=="fixed")delete n.amount;if(!r.deal.deadline)delete n.deadline;
+    if(n.type==="calc")delete n.amount;if(!r.deal.deadline)delete n.deadline;
+    if(n.type!=="monthly"){delete n.start;delete n.end}else if(!r.deal.end)delete n.end;
     if(d){n.closed=q("#dl-c").checked;if(!n.closed)delete n.closed}
     const i=D.deals.findIndex(x=>x.id===n.id);if(i>=0)D.deals[i]=n;else D.deals.push(n);
     try{await saveDeals();
@@ -952,7 +1037,7 @@ function openSheet(title,html,label){
   try{history.pushState({peSheet:SHEETS.length},"",location.href)}catch{}
   return s;
 }
-window.addEventListener("popstate",()=>{if(popSkip){popSkip--;return}const s=SHEETS[SHEETS.length-1];if(s)s.close(true)});
+window.addEventListener("popstate",()=>{if(popSkip){popSkip--;return}if(DLG){DLG.close(false,true);return}const s=SHEETS[SHEETS.length-1];if(s)s.close(true)});
 document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&SHEETS.length&&!document.querySelector(".viewer")){const m=document.querySelector(".menu:not([hidden])");if(!m)SHEETS[SHEETS.length-1].close()}});
 function keepScroll(s,fn){const sh=$(".sheet",s.el),y=sh?sh.scrollTop:0;fn();if(sh)sh.scrollTop=y}
 
@@ -984,7 +1069,7 @@ function openItemForm(item,{cat,onSaved}={}){
     s.close();emit();toast(item?"Item saved":"Item added");onSaved&&onSaved(o);
   });
   const del=$("#if-del",s.body);
-  if(del)del.addEventListener("click",async()=>{if(!confirm(`Delete the item “${item.n}”?`))return;
+  if(del)del.addEventListener("click",async()=>{if(!await ask(`Delete the item “${item.n}”?`,"",{ok:"Delete",danger:true}))return;
     D.items=D.items.filter(x=>x.k!==item.k);await saveCatalog();s.close();emit();toast("Item deleted");onSaved&&onSaved(null)});
 }
 function openGroupForm(g,{onSaved}={}){
@@ -1014,7 +1099,7 @@ function openGroupForm(g,{onSaved}={}){
   if(del)del.addEventListener("click",async()=>{
     const its=D.items.filter(i=>i.cat===g.k),u=usage(),n=its.reduce((a,i)=>a+(u[i.k]||0),0);
     if(n){msg(`Items in this group are used in ${plural(n,"entry","entries")}. Move those items to another group first (tap an item and change its group), then delete the group.`);return}
-    if(!confirm(`Delete the group “${g.n}”${its.length?` and its ${plural(its.length,"item","items")}`:""}?`))return;
+    if(!await ask(`Delete the group “${g.n}”${its.length?` and its ${plural(its.length,"item","items")}`:""}?`,"",{ok:"Delete",danger:true}))return;
     D.items=D.items.filter(i=>i.cat!==g.k);D.groups=D.groups.filter(x=>x.k!==g.k);
     await saveCatalog();s.close();emit();toast("Group deleted");onSaved&&onSaved(null);
   });
@@ -1175,7 +1260,7 @@ function makeForm(root,{entry,onDone,onCancel}){
     const d=ds.find(x=>x.id===st.dealId),a=pnum(amount.value);
     if(d&&!st.item&&d.item&&IM.has(d.item)){st.item=d.item;paintItem();return}
     if(d){const ag=dealAgreed(d),pd=dealPaid(d,Infinity,entry?.id),bal=round2(ag-pd);
-      f("dealHint").textContent=`Agreed ${money(ag)} · paid ${money(pd)} · balance ${balText(bal)}${a?` → ${balText(round2(bal-a))} after this`:""}`}
+      f("dealHint").textContent=`${agLabel(d)} ${money(ag)} · paid ${money(pd)} · balance ${balText(bal,d)}${a?` → ${balText(round2(bal-a),d)} after this`:""}`}
     else f("dealHint").textContent=ds.filter(x=>!x.closed).length>1?"Pick the deal this payment is for. General payments show in the passbook but don’t change any deal.":"Not counted against any deal.";
   }
   function autoAmount(){const q=pnum(qty.value),r=pnum(rate.value);if(q&&r&&!st.amountTouched){amount.value=round2(q*r);st.sumMode=false}hint();split();words()}
@@ -1267,6 +1352,7 @@ function openPaySheet({deal,contact}={}){
   const s=openSheet("Add payment","");
   const fm=makeForm(s.body,{onDone:()=>s.close(),onCancel:()=>s.close()});
   if(deal)fm.presetDeal(deal);else if(contact)fm.presetContact(contact);
+  if(isMonthly(deal)){const b=Math.round(dealBal(deal)),am=$('[data-f="amount"]',s.body);if(b>0&&am&&!am.value){am.value=b;am.dispatchEvent(new Event("input",{bubbles:true}))}}
 }
 function resetAdd(){addForm=makeForm($("#addform"),{onDone:resetAdd})}
 function openEdit(id){openView(id,{edit:true})}
@@ -1294,7 +1380,7 @@ function viewHTML(e){
   if(e.vendor)rows.push(["Paid to",personLine(e.vendor,c?.phone,"")]);
   const os=othersOf(e);if(os.length)rows.push(["Also involved",os.map(o=>{const oc=CM.get(o.contactId);return personLine(oc.name,oc.phone,o.role)}).join("")]);
   const dl=D.deals.find(x=>x.id===e.dealId);
-  if(dl)rows.push(["Deal",`${esc(dl.title)}<small> · agreed ${money(dealAgreed(dl))} · balance ${balText(dealBal(dl))}</small>${termsText(dl).length?`<small style="display:block">${esc(termsText(dl).join(" · "))}</small>`:""}`]);
+  if(dl)rows.push(["Deal",`${esc(dl.title)}<small> · ${agLabel(dl).toLowerCase()} ${money(dealAgreed(dl))} · balance ${balText(dealBal(dl),dl)}</small>${termsText(dl).length?`<small style="display:block">${esc(termsText(dl).join(" · "))}</small>`:""}`]);
   if(e.note)rows.push(["Note",esc(e.note)]);
   return `<div class="vamt"><span class="num">${money(e.amount)}</span><span class="w">${esc(inWords(e.amount))}</span><div style="margin-top:8px">${mode}</div></div>
     <dl class="vlist">${rows.map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
@@ -1391,7 +1477,9 @@ function openFilters(){
   const people=[];const seen=new Set();
   LIVE.forEach(e=>{const k=personKey(e);if(k&&!seen.has(k)){seen.add(k);people.push([k,e.vendor.trim()])}
     othersOf(e).forEach(o=>{const n=CM.get(o.contactId).name.trim(),k2=n.toLowerCase();if(!seen.has(k2)){seen.add(k2);people.push([k2,n])}})});
+  D.contacts.forEach(c=>{const k=c.name.trim().toLowerCase();if(k&&!seen.has(k)){seen.add(k);people.push([k,c.name.trim()])}});
   people.sort((a,b)=>a[1].localeCompare(b[1]));
+  const pCount=k=>LIVE.filter(e=>personKeys(e).includes(k)).length,pName=new Map(people);
   const itemGroups=D.groups.map(({k:g,n:label})=>{const its=D.items.filter(i=>i.cat===g&&usedItems.has(i.k));
     return its.length?`<span class="pg-l" style="margin-top:8px">${esc(label)}</span><div class="chips">${its.map(i=>`<button type="button" class="chip" data-fi="${esc(i.k)}">${esc(i.n)}</button>`).join("")}</div>`:""}).join("")
     +(usedItems.has("none")?`<div class="chips" style="margin-top:8px"><button type="button" class="chip" data-fi="none">Item not set</button></div>`:"");
@@ -1407,7 +1495,7 @@ function openFilters(){
     <span class="lbl">Paid by</span>
     <div class="seg"><button type="button" data-fm="all">Any</button><button type="button" data-fm="cash">Cash</button><button type="button" data-fm="online">Online</button></div>
     <span class="lbl">Shop or person</span>
-    ${people.length?`<div class="chips">${people.map(([k,n])=>`<button type="button" class="chip" data-fp="${esc(k)}">${esc(n)}</button>`).join("")}</div>`:'<p class="pmeta" style="margin:0">No names added to entries yet.</p>'}
+    ${people.length?`<select class="field" id="fp-sel" aria-label="Add a shop or person to the filter"><option value="">Pick a shop or person (${people.length})</option>${people.map(([k,n])=>{const c=pCount(k);return `<option value="${esc(k)}">${esc(n)}${c?` (${c})`:" (no entries)"}</option>`}).join("")}</select><div class="chips" id="fp-on" style="margin-top:8px"></div>`:'<p class="pmeta" style="margin:0">No names added to entries yet.</p>'}
     <span class="lbl">Slip photo or file</span>
     <div class="seg"><button type="button" data-fs="any">Any</button><button type="button" data-fs="yes">Attached</button><button type="button" data-fs="no">None</button></div>
     <span class="lbl">Amount ₹</span>
@@ -1422,14 +1510,16 @@ function openFilters(){
     q("custom").hidden=w.range!=="custom";
     $$("[data-fi]",s.body).forEach(b=>b.setAttribute("aria-pressed",String(w.items.includes(b.dataset.fi))));
     $$("[data-fm]",s.body).forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.fm===w.mode)));
-    $$("[data-fp]",s.body).forEach(b=>b.setAttribute("aria-pressed",String(w.people.includes(b.dataset.fp))));
+    const on=$("#fp-on",s.body);if(on){on.innerHTML=w.people.map(k=>`<button type="button" class="chip" aria-pressed="true" data-fp="${esc(k)}" aria-label="Remove ${esc(pName.get(k)||k)}">${esc(pName.get(k)||k)} ×</button>`).join("");
+      $$("[data-fp]",on).forEach(b=>b.addEventListener("click",()=>{w.people=w.people.filter(x=>x!==b.dataset.fp);paint()}));
+      $$("#fp-sel option",s.body).forEach(o=>{if(o.value)o.disabled=w.people.includes(o.value)})}
     $$("[data-fs]",s.body).forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.fs===w.slip)));
     const n=applyF(LIVE,w).length;q("apply").textContent=`Show ${plural(n,"entry","entries")}`;
   }
   $$("[data-fr]",s.body).forEach(b=>b.addEventListener("click",()=>{w.range=b.dataset.fr;paint()}));
   $$("[data-fi]",s.body).forEach(b=>b.addEventListener("click",()=>{w.items=tog(w.items,b.dataset.fi);paint()}));
   $$("[data-fm]",s.body).forEach(b=>b.addEventListener("click",()=>{w.mode=b.dataset.fm;paint()}));
-  $$("[data-fp]",s.body).forEach(b=>b.addEventListener("click",()=>{w.people=tog(w.people,b.dataset.fp);paint()}));
+  const fsel=$("#fp-sel",s.body);if(fsel)fsel.addEventListener("change",()=>{const k=fsel.value;fsel.value="";if(k&&!w.people.includes(k))w.people=[...w.people,k];paint()});
   $$("[data-fs]",s.body).forEach(b=>b.addEventListener("click",()=>{w.slip=b.dataset.fs;paint()}));
   ["from","to","min","max"].forEach(k=>q(k).addEventListener("input",()=>{w[k]=q(k).value.trim();paint()}));
   q("apply").addEventListener("click",()=>{F=w;PB.limit=150;s.close();renderBook()});
@@ -1482,20 +1572,41 @@ function peopleRows(){
     .filter(r=>!q||r.c.name.toLowerCase().includes(q)||(r.c.phone||"").includes(q.replace(/\s/g,"")))
     .sort((a,b)=>(!a.es.length-!b.es.length)||b.t-a.t||a.c.name.localeCompare(b.c.name));
 }
+let PTAB=lget("pe-ptab","contacts"),PDF=lget("pe-pdf","open");
 function renderPeople(){
+  $$("[data-pt]").forEach(b=>{const on=b.dataset.pt===PTAB;b.setAttribute("aria-pressed",String(on));b.setAttribute("aria-selected",String(on))});
+  $("#pt-deals").hidden=PTAB!=="deals";$("#pt-contacts").hidden=PTAB!=="contacts";
+  const vds=projDeals().filter(dealInView),openN=vds.filter(d=>!d.closed).length;
+  $("#pt-dn").hidden=!openN;$("#pt-dn").textContent=openN;
+  if(PTAB==="deals"){renderAllDeals(vds);return}
   const rows=peopleRows();
   $("#contacts").innerHTML=rows.length?rows.map(({c,es,inv,t})=>{
     const its=[...new Set(es.map(itemName).filter(Boolean))].slice(0,2).join(", ");
     const roles=[...new Set(inv.flatMap(e=>othersOf(e).filter(o=>o.contactId===c.id&&o.role).map(o=>o.role)))].join(", ");
     const sub=es.length?`${its?its+" · ":""}${plural(es.length,"payment","payments")} · last ${fdate(es[0].ts)}`:inv.length?`${roles?roles+" · ":""}involved in ${plural(inv.length,"entry","entries")}`:(VIEW==="all"?"No entries in this project":"No entries in this view");
     const due=projDeals().filter(d=>d.contactId===c.id&&!d.closed&&dealInView(d)),dueAmt=round2(due.reduce((a,d)=>a+dealBal(d),0));
-    const sub2=due.length?`Balance ${balText(dueAmt)} · ${sub}`:sub;
+    const sub2=due.length?`Balance ${balText(dueAmt)} · ${sub}`:sub,nd=projDeals().filter(d=>d.contactId===c.id&&dealInView(d)).length;
     return `<button class="crow${es.length||inv.length||due.length?"":" idle"}" data-pc="${esc(c.id)}"><span class="av" aria-hidden="true">${esc(initials(c.name))}</span>
-      <span style="min-width:0"><b>${esc(c.name)}</b><small>${esc(sub2)}</small></span><span class="num">${es.length?money(t):""}</span></button>`}).join("")
+      <span style="min-width:0"><b>${esc(c.name)}${nd?`<span class="dcount">${plural(nd,"deal","deals")}</span>`:""}</b><small>${esc(sub2)}</small></span><span class="num">${es.length?money(t):""}</span></button>`}).join("")
     :`<p class="empty">${D.contacts.length?"No one matches that search.":"Names you type in “Shop or person” are saved here."}</p>`;
   $$("[data-pc]",$("#contacts")).forEach(b=>b.addEventListener("click",()=>openPerson(b.dataset.pc)));
 }
 $("#psearch").addEventListener("input",renderPeople);
+function renderAllDeals(vds){
+  $$("[data-df]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.df===PDF)));
+  const ds=vds.filter(d=>PDF==="all"||!d.closed).sort((a,b)=>(!!a.closed-!!b.closed)||(isLate(b)-isLate(a))||dealBal(b)-dealBal(a)||a.title.localeCompare(b.title));
+  const box=$("#alldeals");
+  if(!ds.length){box.innerHTML=`<p class="hint" style="margin:10px 0 0">${vds.length?"No open deals. Tap All to see completed ones.":"No deals yet. Add one when a price is agreed up front (₹285 per sq ft, ₹75,000 fixed) or for a monthly salary like a watchman."}</p>`;return}
+  let ag=0,pd=0;ds.forEach(d=>{ag+=dealAgreed(d);pd+=dealPaid(d)});
+  box.innerHTML=`<div class="sumstrip"><div>Agreed / earned<span class="num">${money(ag)}</span></div><div>Paid<span class="num">${money(pd)}</span></div><div>Balance<span class="num">${balText(round2(ag-pd))}</span></div></div>`
+    +ds.map(d=>dealCard(d,true,{who:true})).join("");
+  bindDeals(box);
+  $$("[data-pc]",box).forEach(b=>b.addEventListener("click",()=>openPerson(b.dataset.pc)));
+  $$(".entry",box).forEach(b=>b.addEventListener("click",()=>openView(b.dataset.id)));
+}
+$$("[data-pt]").forEach(b=>b.addEventListener("click",()=>{PTAB=b.dataset.pt;lset("pe-ptab",PTAB);renderPeople();window.scrollTo(0,0)}));
+$$("[data-df]").forEach(b=>b.addEventListener("click",()=>{PDF=b.dataset.df;lset("pe-pdf",PDF);renderPeople()}));
+$("#adddeal2").addEventListener("click",()=>openDealForm(null));
 function openPerson(id){
   if(!CM.get(id))return;
   const s=openSheet(CM.get(id).name,"");
@@ -1563,7 +1674,7 @@ function openContact(c){
     }catch{toast("Couldn’t save the contact.")}
   });
   const del=$("#ct-del",s.body);
-  if(del)del.addEventListener("click",async()=>{if(!confirm(`Delete ${c.name}?`))return;
+  if(del)del.addEventListener("click",async()=>{if(!await ask(`Delete ${c.name}?`,"This removes the contact from People.",{ok:"Delete",danger:true}))return;
     await dbDel("contacts",c.id);D.contacts=D.contacts.filter(x=>x.id!==c.id);s.close();emit();toast("Contact deleted")});
 }
 $("#addcontact").addEventListener("click",()=>openContact(null));
@@ -1585,7 +1696,7 @@ function openProjects(){
     $("#pj-ns",s.body).addEventListener("click",async()=>{const n=$("#pj-n",s.body).value.trim();if(!n){toast("Type a name for the new project");return}
       const p={id:newId("p"),name:n,createdAt:Date.now()};await dbPut("projects",p);D.projects.push(p);switchProject(p.id);s.close();toast(`Started ${n}`)});
     const del=$("#pj-del",s.body);
-    if(del)del.addEventListener("click",async()=>{if(!confirm(`Delete the project “${cur.name}”?`))return;
+    if(del)del.addEventListener("click",async()=>{if(!await ask(`Delete the project “${cur.name}”?`,"",{ok:"Delete",danger:true}))return;
       await dbDel("projects",cur.id);D.projects=D.projects.filter(p=>p.id!==cur.id);switchProject(D.projects[0].id);paint();toast("Project deleted")});
   };
   paint();
@@ -1621,7 +1732,7 @@ function renderDeals(spent){
   let ag=0,pd=0;ds.forEach(d=>{ag+=dealAgreed(d);pd+=dealPaid(d)});const bal=round2(ag-pd),open=round2(ds.filter(d=>!d.closed).reduce((a,d)=>a+Math.max(dealBal(d),0),0));
   $("#deals").innerHTML=`<div class="sumstrip" style="margin-top:0"><div>Agreed<span class="num">${money(ag)}</span></div><div>Paid<span class="num">${money(pd)}</span></div><div>Balance<span class="num">${balText(bal)}</span></div></div>
     <div class="trow total" style="border-top:0"><span>Expected total cost<br><small class="pmeta">spent so far ${money(spent)} + balance still to pay ${money(open)}</small></span><span class="num">${money(spent+open)}</span></div>
-    ${ds.map(d=>{const c=CM.get(d.contactId),b=dealBal(d);return `<button class="crow" data-dc="${esc(d.contactId)}"><span class="av" aria-hidden="true">${esc(initials(c?.name||d.title))}</span><span style="min-width:0"><b>${esc(d.title)}</b><small>${esc([c?.name,dealFormula(d),dueText(d),d.closed?"complete":""].filter(Boolean).join(" · "))}</small></span><span class="num${b<0?" over":""}" style="font-size:22px">${balText(b)}</span></button>`}).join("")}`;
+    ${ds.map(d=>{const c=CM.get(d.contactId),b=dealBal(d);return `<button class="crow" data-dc="${esc(d.contactId)}"><span class="av" aria-hidden="true">${esc(initials(c?.name||d.title))}</span><span style="min-width:0"><b>${esc(d.title)}</b><small>${esc([c?.name,dealFormula(d),dueText(d),d.closed?"complete":""].filter(Boolean).join(" · "))}</small></span><span class="num${b<0&&!isMonthly(d)?" over":""}" style="font-size:22px">${balText(b,d)}</span></button>`}).join("")}`;
   $$("[data-dc]",$("#deals")).forEach(b=>b.addEventListener("click",()=>openPerson(b.dataset.dc)));
 }
 function kindTotals(es){const o={construction:0,documents:0,unknown:0};es.forEach(e=>{const k=kindOf(e);o[k||"unknown"]+=+e.amount||0});return o}
@@ -1656,11 +1767,11 @@ function renderTrash(){
   $$("[data-restore]",ul).forEach(b=>b.addEventListener("click",async()=>{const e=find(b.dataset.restore);if(!e)return;
     try{await restoreIt(e);toast("Entry restored")}catch{toast("Couldn’t restore. Try again.")}}));
   $$("[data-purge]",ul).forEach(b=>b.addEventListener("click",async()=>{const e=find(b.dataset.purge);if(!e)return;
-    if(!confirm("Delete this entry forever? It can’t be recovered after this."))return;
+    if(!await ask("Delete this entry forever?","It can’t be recovered after this.",{ok:"Delete forever",danger:true}))return;
     try{await purge(e);toast("Deleted forever")}catch{toast("Couldn’t delete. Try again.")}}));
 }
 $("#emptytrash").addEventListener("click",async()=>{
-  const t=[...TRASH];if(!t.length||!confirm(`Delete all ${t.length} entries in trash forever? They can’t be recovered.`))return;
+  const t=[...TRASH];if(!t.length||!await ask(`Delete all ${t.length} entries in trash forever?`,"They can’t be recovered.",{ok:"Delete forever",danger:true}))return;
   try{for(const e of t)await purge(e);toast("Trash emptied")}catch{toast("Couldn’t empty trash. Try again.")}
 });
 
@@ -1961,12 +2072,12 @@ async function makeReceipt(sel,{history,slips,deal}){
 
   // deal box when all picked payments are against one deal
   const dl=deal&&es.every(e=>e.dealId&&e.dealId===first.dealId)?D.deals.find(d=>d.id===first.dealId):null;
-  if(dl){const ag=dealAgreed(dl),pd=dealPaid(dl,last.ts),bal=round2(ag-pd);
+  if(dl){const ag=dealAgreed(dl,last.ts),pd=dealPaid(dl,last.ts),bal=round2(ag-pd);
     y+=60;text(`Deal: ${dl.title}`,P,y,font(600,32),K.ink);
     y+=38;text(dealFormula(dl),P,y,font(400,26),K.muted);
     for(const l of termsText(dl).flatMap(t=>wrapT(t,font(400,24),CWr))){y+=32;text(l,P,y,font(400,24),K.muted)}
     y+=20;box(P,y,CWr,96,"#F6F8F5");
-    const w3=CWr/3;[["Agreed",money(ag)],[`Paid till ${fdate(last.ts)}`,money(pd)],["Balance",balText(bal)]].forEach(([l,v],i)=>{text(l,P+20+i*w3,y+34,font(400,22),K.muted);text(v,P+20+i*w3,y+78,font(500,44,NUM),i===2&&bal<0?K.red:K.ink)});
+    const w3=CWr/3;[[isMonthly(dl)?`Earned till ${fdate(last.ts)}`:"Agreed",money(ag)],[`Paid till ${fdate(last.ts)}`,money(pd)],["Balance",balText(bal,dl)]].forEach(([l,v],i)=>{text(l,P+20+i*w3,y+34,font(400,22),K.muted);text(v,P+20+i*w3,y+78,font(500,44,NUM),i===2&&bal<0?K.red:K.ink)});
     y+=96;
   }
 
@@ -2005,13 +2116,13 @@ async function makeReceipt(sel,{history,slips,deal}){
   const blob=await new Promise(r=>c.toBlob(r,"image/png"));
   return{blob,single,who,total:t.t,first,last,count:es.length};
 }
-function openReceipt(ids){
+function openReceipt(ids,force={}){
   const es=LIVE.filter(e=>ids.includes(e.id));if(!es.length){toast("Pick at least one entry");return}
   const pk=personOf(es[0]),single=!!pk&&es.every(e=>personOf(e)===pk);
   const slips=es.filter(e=>attachCount(e));
   const nAtt=es.reduce((a,e)=>a+attachCount(e),0);
   const dealOk=es.every(e=>e.dealId&&e.dealId===es[0].dealId)&&D.deals.some(d=>d.id===es[0].dealId);
-  const opt={history:single&&lget("pe-rc-hist",true),slips:slips.length>0&&lget("pe-rc-slips",true),deal:dealOk&&lget("pe-rc-deal",false)};
+  const opt={history:single&&lget("pe-rc-hist",true),slips:slips.length>0&&lget("pe-rc-slips",true),deal:dealOk&&(force.deal??lget("pe-rc-deal",false))};
   // every option is always shown on one line; the ⓘ explains it (hover on desktop, tap on phone)
   const optRow=(id,on,ok,label,info,why)=>`<div class="rcopt${ok?"":" off"}"><label class="check"><input type="checkbox" id="${id}"${on?" checked":""}${ok?"":" disabled"}><span>${label}</span></label><button type="button" class="tipi" data-tip="${esc(ok?info:why)}" aria-label="${esc(ok?info:why)}">i</button></div>`;
   const s=openSheet("Share receipt",`
@@ -2147,8 +2258,8 @@ $("#restorefile").addEventListener("change",async ev=>{
   const newProjects=(Array.isArray(d.projects)?d.projects:[]).filter(p=>p&&p.id&&p.name&&!D.projects.some(x=>x.id===p.id));
   const have=new Map(D.entries.map(e=>[e.id,e]));
   const incoming=d.entries.filter(e=>e&&e.id&&(!have.has(e.id)||(e.updatedAt||0)>(have.get(e.id).updatedAt||0)));
-  const msg=`Restore ${plural(incoming.length,"entry","entries")}${newProjects.length?` and ${plural(newProjects.length,"project","projects")}`:""} from this backup? Entries already on the phone are kept.`;
-  if(!confirm(msg))return;
+  const msg=`Restore ${plural(incoming.length,"entry","entries")}${newProjects.length?` and ${plural(newProjects.length,"project","projects")}`:""} from this backup?`;
+  if(!await ask(msg,"Entries already on this phone are kept.",{ok:"Restore"}))return;
   try{
     const freshPhone=!D.entries.length;
     if(freshPhone&&newProjects.length){

@@ -10,7 +10,7 @@ Planned for Google Play / App Store later with a subscription (see roadmap.md).
 ## Files
 - `index.html` — the whole app: HTML, CSS and JS in one file, no framework, no build step.
 - `sw.js` — service worker: cache-first for the app shell, network-first for index.html.
-  **Bump `const V` on every change to any file** (currently pe-v2.9.2).
+  **Bump `const V` on every change to any file** (currently pe-v2.10.0).
 - `manifest.webmanifest` — name "Property Estimates", short name "Estimates".
 - `exceljs.min.js` (ExcelJS 4.4.0) and `jspdf.umd.min.js` (jsPDF 2.5.2) — loaded lazily, cached by the SW.
 - `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`.
@@ -36,6 +36,12 @@ Planned for Google Play / App Store later with a subscription (see roadmap.md).
 - localStorage keys: pe-project, pe-view, pe-theme, ghk-mode, ghk-backup.
 
 ## Features in place
+
+- v2.10.0: confirm boxes are the app's own `ask(title,msg,{ok,danger})` (Promise<boolean>; no native confirm/alert anywhere; back button and Escape cancel).
+- People page has tabs People | Deals (`PTAB`, saved in pe-ptab). Deals tab lists all deals (Open/All), "+ New deal" asks who the deal is with. Contact rows show a "N deals" badge.
+- Deal type "monthly" (salary): {amount per month, start, end?}. `salaryCalc` counts day by day per monthly period from start (23 Oct to 22 Nov is month 1), inclusive of today. Earned replaces Agreed; negative balance shows "paid ahead". Pay sheet prefills what is due now.
+- Every deal card has Share (receipt of all its payments with Deal summary on), Edit, Delete.
+- Passbook filter: Shop or person is a dropdown of every name (with entry counts); picked names show as removable chips.
 - Add screen: one box for the amount (with amount in words) and paid-by (Cash / Online / Both, with a linked cash and online split).
   Item picker is one dropdown per group, a date field (today by default), shop or person with 3 quick picks
   (most frequent in the last 10 entries), mobile number, note, slip photo.
