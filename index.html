@@ -64,7 +64,9 @@ button{cursor:pointer}
 .hero::before{content:"";display:block;height:8px;background:repeating-linear-gradient(-45deg,var(--tape) 0 12px,var(--tape-ink) 12px 24px)}
 .hero-in{padding:12px 16px 14px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
 .hero h1{margin:0;font-size:15px;font-weight:500;color:var(--muted)}
-.hero .big{font-size:52px;margin-top:4px}
+.hero .big{font-size:clamp(38px,11.5vw,52px);margin-top:4px;white-space:nowrap}
+.hero .split{flex:none;margin-left:auto}
+.hero-in{flex-wrap:wrap;row-gap:4px}
 .hero .split{text-align:right;font-size:14px;color:var(--muted);line-height:1.5}
 .hero .split b{font-weight:600;color:var(--ink)}
 .status{font-size:12px;color:var(--muted);padding:0 16px 10px}
@@ -240,9 +242,30 @@ body.selmode .toast{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
 .rprev img{display:block;width:100%}
 
 /* charts */
-.viz{--g1:#2a78d6;--g2:#eb6834;--g3:#1baf7a;--g4:#eda100;--grid:#E1E7E2}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .viz{--g1:#3987e5;--g2:#d95926;--g3:#199e70;--g4:#c98500;--grid:#2A343D}}
-:root[data-theme="dark"] .viz{--g1:#3987e5;--g2:#d95926;--g3:#199e70;--g4:#c98500;--grid:#2A343D}
+.viz{--g1:#2a78d6;--g2:#eb6834;--g3:#1baf7a;--g4:#eda100;--g5:#e87ba4;--g6:#008300;--g7:#6250d6;--g8:#e34948;--gx:#A3ADB5;--grid:#E1E7E2}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .viz{--g1:#3987e5;--g2:#d95926;--g3:#199e70;--g4:#c98500;--g5:#d55181;--g6:#008300;--g7:#9085e9;--g8:#e66767;--gx:#5E6A74;--grid:#2A343D}}
+:root[data-theme="dark"] .viz{--g1:#3987e5;--g2:#d95926;--g3:#199e70;--g4:#c98500;--g5:#d55181;--g6:#008300;--g7:#9085e9;--g8:#e66767;--gx:#5E6A74;--grid:#2A343D}
+
+/* view switch + group dropdowns + group editor */
+.tleft{display:flex;align-items:center;gap:6px;min-width:0;flex:1}
+.tleft .projbtn{max-width:none;min-width:72px;flex:0 1 auto}
+.viewsel{appearance:none;-webkit-appearance:none;flex:none;min-width:0;border:1.5px solid var(--rule);background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235D6B77' stroke-width='2.4'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center/13px;border-radius:999px;padding:5px 28px 5px 12px;font-weight:600;font-size:14px;max-width:132px}
+.viewsel.on{background-color:var(--warn-bg);border-color:var(--tape);color:var(--warn-ink)}
+.gsel{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:6px}
+.gs{position:relative;display:block;border:1.5px solid var(--rule);background:var(--field);border-radius:10px;padding:6px 24px 6px 10px;min-height:52px;min-width:0}
+.gs small{display:block;font-size:12px;color:var(--muted);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gs select{appearance:none;-webkit-appearance:none;display:block;border:0;background:transparent;width:100%;font-weight:600;font-size:15px;padding:0;outline:none;text-overflow:ellipsis;color:var(--ink)}
+.gs:not(.on) select{color:var(--muted);font-weight:500}
+.gs::after{content:"";position:absolute;right:10px;top:50%;width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.gs.on{border-color:var(--tape);background:var(--warn-bg);box-shadow:inset 0 0 0 1px var(--tape)}
+.gs.on small{color:var(--warn-ink)}
+.gs:focus-within{outline:3px solid var(--online);outline-offset:1px}
+.grp{border:1.5px solid var(--rule);border-radius:12px;padding:10px 12px 6px;margin-top:10px}
+.ghead{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-bottom:4px;border-bottom:1px solid var(--rule)}
+.ghead b{font-weight:600;font-size:16px}
+.grp .irow:last-of-type{border-bottom:0}
+.tag.unk{color:var(--warn-ink);background:var(--warn-bg);border:1px solid var(--tape)}
+.formmsg{background:var(--warn-bg);color:var(--warn-ink);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:12px}
 .gbar{display:flex;gap:2px;height:16px;margin:14px 0 10px}
 .gbar i{display:block;height:100%;border-radius:4px;min-width:4px}
 .lg{display:grid;grid-template-columns:12px 1fr auto 40px;gap:7px 8px;align-items:center;font-size:14px}
@@ -265,7 +288,10 @@ svg.mchart text{font-family:Hind,"Noto Sans",system-ui,sans-serif}
 <div id="boot" role="status"><div class="spin"></div><div id="bootmsg">Opening Property Estimates…</div></div>
 <main>
   <div class="topbar">
-    <button class="projbtn" id="projbtn" aria-label="Switch project"><span id="projname">Project</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="tleft">
+      <button class="projbtn" id="projbtn" aria-label="Switch project"><span id="projname">Project</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+      <select class="viewsel" id="viewsel" aria-label="Show in the app"><option value="all">All</option><option value="construction">Construction</option><option value="documents">Documents</option></select>
+    </div>
     <div class="ticons">
       <button class="ibtn" id="m-down-b" aria-label="Download PDF, Excel or backup" aria-expanded="false" aria-controls="m-down"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></button>
       <button class="ibtn" id="m-up-b" aria-label="Restore from backup" aria-expanded="false" aria-controls="m-up"><svg viewBox="0 0 24 24"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg></button>
@@ -286,6 +312,7 @@ svg.mchart text{font-family:Hind,"Noto Sans",system-ui,sans-serif}
         <p id="lastbackup"></p>
         <p><b>PDF or Excel?</b> The PDF shows every slip photo and opens anywhere. Excel photos show in the Excel or WPS app, not in WhatsApp or Google Drive previews.</p>
         <p><b>Restore</b> adds entries from a backup file and keeps everything already on this phone. A backup from the old Ghar ka Hisaab app works too.</p>
+        <p><b>All, Construction, Documents</b> next to the project name filters the whole app. Each group’s category is set in Edit groups on the Add screen. Groups marked Unknown show only under All.</p>
         <p><b>Receipts:</b> in Passbook tap Select, pick entries, then Share receipt.</p>
         <span class="lbl" style="margin-top:0">Appearance</span>
         <div class="seg" role="group" aria-label="Theme" id="theme">
@@ -298,7 +325,7 @@ svg.mchart text{font-family:Hind,"Noto Sans",system-ui,sans-serif}
   <section id="v-add">
     <div class="hero">
       <div class="hero-in">
-        <div><h1>Total spent so far</h1><div class="big num" id="h-total">₹0</div></div>
+        <div><h1 id="h-label">Total spent so far</h1><div class="big num" id="h-total">₹0</div></div>
         <div class="split">Cash <b id="h-cash">₹0</b><br>Online <b id="h-online">₹0</b></div>
       </div>
       <div class="status" id="status"></div>
@@ -353,7 +380,7 @@ svg.mchart text{font-family:Hind,"Noto Sans",system-ui,sans-serif}
   </section>
 
   <section id="v-people" hidden>
-    <div class="card"><h2>Payments to people</h2><div id="people"></div></div>
+    <div class="card" id="peoplecard"><h2 id="peopleh">Payments to people</h2><div id="people"></div></div>
     <div class="card">
       <div class="phead" style="margin-bottom:6px"><h2 style="margin:0">Shops and contacts</h2><button class="linkbtn" id="addcontact">+ Add contact</button></div>
       <div id="contacts"></div>
@@ -366,7 +393,6 @@ svg.mchart text{font-family:Hind,"Noto Sans",system-ui,sans-serif}
       <div class="gbar" id="gbar" role="img"></div><div class="lg" id="glegend"></div></div>
     <div class="card viz">
       <div class="phead"><h2 style="margin:0">Spending by month</h2><button class="linkbtn" id="mtoggle">Show table</button></div>
-      <div class="seg s2" role="group" aria-label="What to include" id="mmode" style="margin-top:10px"><button type="button" data-m="build">Building cost</button><button type="button" data-m="all">Everything</button></div>
       <div class="chartwrap" id="mchart" style="margin-top:14px"></div>
       <div class="mlegend" id="mlg"></div>
       <div id="mtable" hidden></div>
@@ -409,8 +435,8 @@ const DEFAULT_ITEMS=[
   {k:"land",n:"Land",sub:"plot cost",cat:"land",units:[]},
   {k:"registry",n:"Registry",sub:"stamp duty, papers",cat:"land",units:[]}
 ];
-const GROUPS=[["material","Material"],["people","Payments to people"],["land","Land and documents"],["other","Other"]];
-const GNAME=Object.fromEntries(GROUPS);
+const DEFAULT_GROUPS=[{k:"material",n:"Material",kind:"construction"},{k:"people",n:"Payments to people",kind:"construction"},{k:"land",n:"Land and documents",kind:"documents"}];
+const KINDS={construction:"Construction",documents:"Documents"};
 const RANGES=[["all","All time"],["week","Last 7 days"],["month","This month"],["lastmonth","Last month"],["custom","Custom dates"]];
 
 /* ---------- helpers ---------- */
@@ -430,7 +456,7 @@ const localDay=(d=new Date())=>`${d.getFullYear()}-${String(d.getMonth()+1).padS
 const slug=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"project";
 const newId=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const plural=(n,one,many)=>`${n} ${n===1?one:many}`;
-function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
+function toast(msg){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
 function lget(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch{return d}}
 function lset(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 
@@ -455,21 +481,29 @@ const dbDel=(s,k)=>reqP(os(s,"readwrite").delete(k));
 const dbGet=(s,k)=>reqP(os(s).get(k));
 
 /* ---------- app state ---------- */
-const D={entries:[],projects:[],contacts:[],items:[],pid:null};
-let IM=new Map(),CM=new Map(),LIVE=[],TRASH=[];
+const D={entries:[],projects:[],contacts:[],items:[],groups:[],pid:null};
+let IM=new Map(),CM=new Map(),GM=new Map(),LIVE=[],TRASH=[],VIEW=lget("pe-view","all");
+if(!["all","construction","documents"].includes(VIEW))VIEW="all";
 const proj=()=>D.projects.find(p=>p.id===D.pid);
 function rebuild(){
-  IM=new Map(D.items.map(i=>[i.k,i]));CM=new Map(D.contacts.map(c=>[c.id,c]));
-  const mine=D.entries.filter(e=>e.projectId===D.pid);
+  IM=new Map(D.items.map(i=>[i.k,i]));CM=new Map(D.contacts.map(c=>[c.id,c]));GM=new Map(D.groups.map(g=>[g.k,g]));
+  const mine=D.entries.filter(e=>e.projectId===D.pid&&inView(e));
   LIVE=mine.filter(e=>!e.deletedAt).sort((a,b)=>b.ts-a.ts);
   TRASH=mine.filter(e=>e.deletedAt).sort((a,b)=>b.deletedAt-a.deletedAt);
 }
 function emit(){rebuild();renderAll()}
 const itemName=e=>IM.get(e.item)?.n||(e.item?(e.itemName||"Other"):null);
-const groupOf=e=>e.item?(IM.get(e.item)?.cat||"other"):"none";
+const groupOf=e=>e.item&&IM.has(e.item)?IM.get(e.item).cat:"none";
+const kindOf=e=>GM.get(groupOf(e))?.kind||null;
+const inView=e=>VIEW==="all"||kindOf(e)===VIEW;
+const viewGroups=()=>D.groups.filter(g=>VIEW==="all"||g.kind===VIEW);
+const gName=k=>k==="none"?"Item not set":(GM.get(k)?.n||"Other");
+const kindTag=k=>k?`<span class="tag ${k==="documents"?"online":"cash"}">${KINDS[k]}</span>`:'<span class="tag unk">Unknown</span>';
+function ensureGroups(){for(const i of D.items)if(!D.groups.some(g=>g.k===i.cat)){const d=DEFAULT_GROUPS.find(g=>g.k===i.cat);D.groups.push({k:i.cat,n:d?d.n:"Other",kind:null})}}
+function usage(){const u={};for(const e of D.entries)if(e.item)u[e.item]=(u[e.item]||0)+1;return u}
 const subOf=i=>i.sub||(i.units||[]).join(", ");
 const phoneOf=e=>CM.get(e.contactId)?.phone||"";
-const saveCatalog=()=>dbPut("meta",D.items,"catalog");
+const saveCatalog=async()=>{ensureGroups();await dbPut("meta",D.items,"catalog");await dbPut("meta",D.groups,"groups")};
 
 // Turns older entries (v1 "other" items, vendor names without contacts, no project) into the current shape.
 function upgradeLegacy(list,pid){
@@ -505,9 +539,12 @@ async function persistUpgrade(u){
 async function init(){
   try{DBH=await openDB()}catch{$("#bootmsg").textContent="This browser can’t save data. Open the app in Chrome.";return false}
   [D.entries,D.projects,D.contacts]=await Promise.all([dbAll("entries"),dbAll("projects"),dbAll("contacts")]);
-  const cat=await dbGet("meta","catalog");
+  const cat=await dbGet("meta","catalog"),grp=await dbGet("meta","groups");
   D.items=Array.isArray(cat)&&cat.length?cat:DEFAULT_ITEMS.map(i=>({...i,units:[...i.units]}));
-  if(!Array.isArray(cat))await saveCatalog();
+  if(Array.isArray(grp))D.groups=grp;
+  // first run ever: groups come with a category; older installs start as Unknown until edited
+  else D.groups=DEFAULT_GROUPS.map(g=>({...g,kind:Array.isArray(cat)?null:g.kind}));
+  if(!Array.isArray(cat)||!Array.isArray(grp))await saveCatalog();
   if(!D.projects.length){const p={id:newId("p"),name:"My house",createdAt:Date.now()};await dbPut("projects",p);D.projects.push(p)}
   D.projects.sort((a,b)=>a.createdAt-b.createdAt);
   const want=lget("pe-project",null);
@@ -568,39 +605,82 @@ function openSheet(title,html,label){
 
 /* ---------- item catalog: add, rename, hide, units ---------- */
 function openItemForm(item,{cat,onSaved}={}){
-  const it=item||{n:"",sub:"",cat:cat||"other",units:[]};let g=it.cat;
+  if(!D.groups.length){toast("Add a group first");return}
+  const it=item||{n:"",sub:"",cat:cat||(viewGroups()[0]||D.groups[0]).k,units:[]};
+  const used=item?(usage()[item.k]||0):0;
   const s=openSheet(item?"Edit item":"New item",`
     <label class="lbl" for="if-n">Name</label><input class="field" id="if-n" autocomplete="off" placeholder="e.g. Binding wire" value="${esc(it.n)}">
-    <span class="lbl">Group</span>
-    <div class="seg s2" role="group" aria-label="Group" style="grid-template-columns:1fr 1fr">${GROUPS.map(([k,n])=>`<button type="button" data-g="${k}" style="border-top:${k==="land"||k==="other"?"1.5px solid var(--rule)":"0"};border-left:${k==="people"||k==="other"?"1.5px solid var(--rule)":"0"}">${esc(n)}</button>`).join("")}</div>
+    <label class="lbl" for="if-g">Group</label>
+    <select class="field" id="if-g">${D.groups.map(g=>`<option value="${esc(g.k)}"${g.k===it.cat?" selected":""}>${esc(g.n)} (${g.kind?KINDS[g.kind]:"Unknown"})</option>`).join("")}</select>
     <label class="lbl" for="if-u">Units <span style="font-size:12px">(optional, comma separated)</span></label><input class="field" id="if-u" autocomplete="off" placeholder="e.g. kg, bundle" value="${esc((it.units||[]).join(", "))}">
     <p class="hint">Add units if you want quantity × rate on this item. Leave empty for payments.</p>
     <label class="lbl" for="if-s">Short note under the name <span style="font-size:12px">(optional)</span></label><input class="field" id="if-s" autocomplete="off" value="${esc(it.sub||"")}">
     ${item?`<label class="check"><input type="checkbox" id="if-h" ${it.hidden?"checked":""}>Hide from the Add screen</label><p class="hint">Hidden items keep their old entries and totals.</p>`:""}
-    <button class="primary" id="if-save">${item?"Save item":"Add item"}</button>`);
-  const paintG=()=>$$("[data-g]",s.body).forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.g===g)));
-  $$("[data-g]",s.body).forEach(b=>b.addEventListener("click",()=>{g=b.dataset.g;paintG()}));paintG();
+    <button class="primary" id="if-save">${item?"Save item":"Add item"}</button>
+    ${item?(used?`<p class="hint">Used in ${plural(used,"entry","entries")}, so it can’t be deleted. Hide it instead.</p>`:'<button class="danger" id="if-del">Delete item</button>'):""}`);
   if(!item)setTimeout(()=>$("#if-n",s.body).focus(),50);
   $("#if-save",s.body).addEventListener("click",async()=>{
     const n=$("#if-n",s.body).value.trim();if(!n){toast("Type a name for the item");return}
     const dup=D.items.find(i=>i.n.toLowerCase()===n.toLowerCase()&&(!item||i.k!==item.k));
     if(dup){toast(`“${dup.n}” already exists${dup.hidden?" (hidden)":""}`);return}
     const units=[...new Set($("#if-u",s.body).value.split(",").map(u=>u.trim()).filter(Boolean))];
-    const o={...(item||{k:newId("i")}),n,cat:g,units,sub:$("#if-s",s.body).value.trim()};
+    const o={...(item||{k:newId("i")}),n,cat:$("#if-g",s.body).value,units,sub:$("#if-s",s.body).value.trim()};
     if(item){o.hidden=$("#if-h",s.body).checked;if(!o.hidden)delete o.hidden}
     const i=D.items.findIndex(x=>x.k===o.k);if(i>=0)D.items[i]=o;else D.items.push(o);
     try{await saveCatalog()}catch{toast("Couldn’t save the item.");return}
     s.close();emit();toast(item?"Item saved":"Item added");onSaved&&onSaved(o);
   });
+  const del=$("#if-del",s.body);
+  if(del)del.addEventListener("click",async()=>{if(!confirm(`Delete the item “${item.n}”?`))return;
+    D.items=D.items.filter(x=>x.k!==item.k);await saveCatalog();s.close();emit();toast("Item deleted");onSaved&&onSaved(null)});
 }
-function openItems(onChange){
-  const s=openSheet("Edit items","");
+function openGroupForm(g,{onSaved}={}){
+  let kind=g?g.kind:(VIEW!=="all"?VIEW:null);
+  const s=openSheet(g?"Edit group":"New group",`
+    <label class="lbl" for="gf-n">Group name</label><input class="field" id="gf-n" autocomplete="off" placeholder="e.g. Electrical" value="${esc(g?.n||"")}">
+    <span class="lbl">Belongs to</span>
+    <div class="seg s2" role="group" aria-label="Belongs to"><button type="button" data-kd="construction">Construction</button><button type="button" data-kd="documents">Documents</button></div>
+    <p class="hint">Documents is for land, registry and paperwork. Everything spent on building is Construction.</p>
+    <div class="formmsg" id="gf-msg" hidden></div>
+    <button class="primary" id="gf-save">${g?"Save group":"Add group"}</button>
+    ${g?'<button class="danger" id="gf-del">Delete group</button>':""}`);
+  const msg=t=>{const m=$("#gf-msg",s.body);m.textContent=t;m.hidden=!t};
+  const paintK=()=>$$("[data-kd]",s.body).forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.kd===kind)));
+  $$("[data-kd]",s.body).forEach(b=>b.addEventListener("click",()=>{kind=b.dataset.kd;paintK();msg("")}));paintK();
+  if(!g)setTimeout(()=>$("#gf-n",s.body).focus(),50);
+  $("#gf-save",s.body).addEventListener("click",async()=>{
+    const n=$("#gf-n",s.body).value.trim();if(!n){msg("Type a name for the group.");return}
+    if(!kind){msg("Choose Construction or Documents.");return}
+    const dup=D.groups.find(x=>x.n.toLowerCase()===n.toLowerCase()&&x.k!==g?.k);if(dup){msg(`A group called “${dup.n}” already exists.`);return}
+    const o={...(g||{k:newId("g")}),n,kind};
+    const i=D.groups.findIndex(x=>x.k===o.k);if(i>=0)D.groups[i]=o;else D.groups.push(o);
+    try{await saveCatalog()}catch{msg("Couldn’t save the group.");return}
+    s.close();emit();toast(g?"Group saved":"Group added");onSaved&&onSaved(o);
+  });
+  const del=$("#gf-del",s.body);
+  if(del)del.addEventListener("click",async()=>{
+    const its=D.items.filter(i=>i.cat===g.k),u=usage(),n=its.reduce((a,i)=>a+(u[i.k]||0),0);
+    if(n){msg(`Items in this group are used in ${plural(n,"entry","entries")}. Move those items to another group first (tap an item and change its group), then delete the group.`);return}
+    if(!confirm(`Delete the group “${g.n}”${its.length?` and its ${plural(its.length,"item","items")}`:""}?`))return;
+    D.items=D.items.filter(i=>i.cat!==g.k);D.groups=D.groups.filter(x=>x.k!==g.k);
+    await saveCatalog();s.close();emit();toast("Group deleted");onSaved&&onSaved(null);
+  });
+}
+function openGroups(onChange){
+  const s=openSheet("Edit groups","");
+  const again=()=>{paint();onChange&&onChange()};
   const paint=()=>{
-    s.body.innerHTML=GROUPS.map(([g,label])=>{const its=D.items.filter(i=>i.cat===g);if(!its.length)return"";
-      return `<div class="cathead"><span>${esc(label)}</span></div>`+its.map(i=>`<button class="irow" data-k="${esc(i.k)}"><span><b>${esc(i.n)}</b>${i.hidden?' <span class="tag muted">Hidden</span>':""}<small>${esc((i.units||[]).length?"Units: "+i.units.join(", "):"No units")}</small></span><span class="go">Edit</span></button>`).join("")}).join("")
-      +'<button class="primary" id="it-new">+ Add new item</button>';
-    $$("[data-k]",s.body).forEach(b=>b.addEventListener("click",()=>openItemForm(IM.get(b.dataset.k),{onSaved:()=>{paint();onChange&&onChange()}})));
-    $("#it-new",s.body).addEventListener("click",()=>openItemForm(null,{onSaved:()=>{paint();onChange&&onChange()}}));
+    const u=usage();
+    s.body.innerHTML=`<p class="hint" style="margin-top:0">Each group belongs to Construction or Documents. The switch next to the project name uses this to filter the app. Groups marked Unknown show only under All.</p>`
+      +D.groups.map(g=>{const its=D.items.filter(i=>i.cat===g.k);
+        return `<div class="grp"><div class="ghead"><span><b>${esc(g.n)}</b> ${kindTag(g.kind)}</span><button class="linkbtn" data-eg="${esc(g.k)}">Edit group</button></div>`
+          +(its.length?its.map(i=>`<button class="irow" data-k="${esc(i.k)}"><span><b>${esc(i.n)}</b>${i.hidden?' <span class="tag muted">Hidden</span>':""}<small>${esc([(i.units||[]).length?"Units: "+i.units.join(", "):"No units",u[i.k]?plural(u[i.k],"entry","entries"):""].filter(Boolean).join(" · "))}</small></span><span class="go">Edit</span></button>`).join(""):'<p class="pmeta" style="margin:8px 0">No items yet.</p>')
+          +`<button class="linkbtn" data-ni="${esc(g.k)}" style="margin:4px 0">+ Add item</button></div>`}).join("")
+      +'<button class="primary" id="gr-new">+ Add new group</button>';
+    $$("[data-k]",s.body).forEach(b=>b.addEventListener("click",()=>openItemForm(IM.get(b.dataset.k),{onSaved:again})));
+    $$("[data-ni]",s.body).forEach(b=>b.addEventListener("click",()=>openItemForm(null,{cat:b.dataset.ni,onSaved:again})));
+    $$("[data-eg]",s.body).forEach(b=>b.addEventListener("click",()=>openGroupForm(GM.get(b.dataset.eg),{onSaved:again})));
+    $("#gr-new",s.body).addEventListener("click",()=>openGroupForm(null,{onSaved:again}));
   };
   paint();
 }
@@ -612,8 +692,8 @@ function makeForm(root,{entry,onDone}){
     amountTouched:editing,file:null,removeSlip:false};
   root.innerHTML=`
     <label class="amount"><span>₹</span><input data-f="amount" inputmode="decimal" placeholder="Amount" aria-label="Amount in rupees" autocomplete="off"></label>
-    <div class="pickhead"><span class="lbl">What was it for? <span style="font-size:12px">(optional)</span></span><span><button type="button" class="linkbtn" data-f="clearItem" hidden>Clear</button><button type="button" class="linkbtn" data-f="editItems">Edit items</button></span></div>
-    <div class="picker" data-f="picker"></div>
+    <div class="pickhead"><span class="lbl">What was it for? <span style="font-size:12px">(optional)</span></span><span><button type="button" class="linkbtn" data-f="clearItem" hidden>Clear</button><button type="button" class="linkbtn" data-f="editItems">Edit groups</button></span></div>
+    <div class="gsel" data-f="picker"></div>
     <div class="row3" data-f="qtyWrap" hidden style="margin-top:10px">
       <label><small>Quantity</small><input class="field" data-f="qty" inputmode="decimal"></label>
       <label><small>Unit</small><select class="field" data-f="unit"></select></label>
@@ -648,14 +728,17 @@ function makeForm(root,{entry,onDone}){
   const amount=f("amount"),qty=f("qty"),rate=f("rate"),unit=f("unit"),cash=f("cash"),vendor=f("vendor"),phone=f("phone");
 
   function paintPicker(){
-    f("picker").innerHTML=GROUPS.map(([g,label])=>{
-      const tiles=D.items.filter(i=>i.cat===g&&(!i.hidden||i.k===st.item)).map(i=>
-        `<button type="button" class="tile" data-item="${esc(i.k)}" aria-pressed="${i.k===st.item}"><b>${esc(i.n)}</b><small>${esc(subOf(i))}</small></button>`);
-      if(g==="other")tiles.push('<button type="button" class="tile new" data-new="1"><b>+ New</b><small>add an item</small></button>');
-      return tiles.length?`<div><span class="pg-l">${esc(label)}</span><div class="tiles">${tiles.join("")}</div></div>`:"";
-    }).join("");
-    $$("[data-item]",f("picker")).forEach(b=>b.addEventListener("click",()=>{st.item=st.item===b.dataset.item?null:b.dataset.item;paintItem()}));
-    $("[data-new]",f("picker")).addEventListener("click",()=>openItemForm(null,{onSaved:it=>{st.item=it.k;paintItem()}}));
+    if(st.item&&!IM.has(st.item))st.item=null;
+    const gs=viewGroups(),cur=IM.get(st.item);
+    if(cur&&!gs.some(g=>g.k===cur.cat)){const g=GM.get(cur.cat);if(g)gs.push(g)}
+    f("picker").innerHTML=gs.length?gs.map(g=>{
+      const its=D.items.filter(i=>i.cat===g.k&&(!i.hidden||i.k===st.item)),on=its.some(i=>i.k===st.item);
+      return `<label class="gs${on?" on":""}"><small>${esc(g.n)}</small><select data-g="${esc(g.k)}" aria-label="${esc(g.n)}"><option value="">Choose</option>${its.map(i=>`<option value="${esc(i.k)}"${i.k===st.item?" selected":""}>${esc(i.n)}</option>`).join("")}<option value="__new">+ New item</option></select></label>`}).join("")
+      :'<p class="hint" style="margin:0">No groups in this view. Tap Edit groups to add one.</p>';
+    $$("select[data-g]",f("picker")).forEach(sel=>sel.addEventListener("change",()=>{
+      const v=sel.value,g=sel.dataset.g;
+      if(v==="__new"){sel.value=IM.get(st.item)?.cat===g?st.item:"";openItemForm(null,{cat:g,onSaved:it=>{if(it)st.item=it.k;paintItem()}});return}
+      st.item=v||null;paintItem()}));
   }
   function paintItem(){
     paintPicker();
@@ -694,7 +777,7 @@ function makeForm(root,{entry,onDone}){
 
   $$("[data-mode]",root).forEach(b=>b.addEventListener("click",()=>{st.mode=b.dataset.mode;paintMode()}));
   f("clearItem").addEventListener("click",()=>{st.item=null;paintItem()});
-  f("editItems").addEventListener("click",()=>openItems(paintItem));
+  f("editItems").addEventListener("click",()=>openGroups(paintItem));
   amount.addEventListener("input",()=>{st.amountTouched=amount.value!=="";hint();split()});
   qty.addEventListener("input",autoAmount);rate.addEventListener("input",autoAmount);unit.addEventListener("change",hint);
   cash.addEventListener("input",split);
@@ -736,7 +819,7 @@ function makeForm(root,{entry,onDone}){
       await saveEntry(e);
       if(oldKey&&oldKey!==e.slipKey)await delSlip(oldKey);
       if(!editing&&st.mode!=="both")lset("ghk-mode",st.mode);
-      toast(editing?"Changes saved":"Entry saved");onDone&&onDone();
+      toast(!inView(e)?"Saved. It shows under All because its group isn’t in this view.":editing?"Changes saved":"Entry saved");onDone&&onDone();
     }catch(err){
       console.error(err);toast("Couldn’t save. Phone storage may be full.");
       btn.disabled=false;btn.textContent=editing?"Save changes":"Save entry";
@@ -821,7 +904,7 @@ function openFilters(){
   const usedItems=new Set(LIVE.map(e=>e.item||"none"));
   const people=[];const seen=new Set();
   [...LIVE].sort((a,b)=>(a.vendor||"").localeCompare(b.vendor||"")).forEach(e=>{const k=personKey(e);if(k&&!seen.has(k)){seen.add(k);people.push([k,e.vendor.trim()])}});
-  const itemGroups=GROUPS.map(([g,label])=>{const its=D.items.filter(i=>i.cat===g&&usedItems.has(i.k));
+  const itemGroups=D.groups.map(({k:g,n:label})=>{const its=D.items.filter(i=>i.cat===g&&usedItems.has(i.k));
     return its.length?`<span class="pg-l" style="margin-top:8px">${esc(label)}</span><div class="chips">${its.map(i=>`<button type="button" class="chip" data-fi="${esc(i.k)}">${esc(i.n)}</button>`).join("")}</div>`:""}).join("")
     +(usedItems.has("none")?`<div class="chips" style="margin-top:8px"><button type="button" class="chip" data-fi="none">Item not set</button></div>`:"");
   s.body.innerHTML=`
@@ -899,7 +982,9 @@ const telLink=p=>p?`<a class="linkbtn" href="tel:${esc(cleanPhone(p))}">Call ${e
 function renderPeople(){
   const lists={};let n=0;
   const listBtn=es=>{const id="l"+(n++);lists[id]=es;return{btn:`<button class="linkbtn" data-show="${id}">Show payments</button>`,ul:`<ul class="book" data-list="${id}" hidden></ul>`}};
-  const pitems=D.items.filter(i=>i.cat==="people"&&(!i.hidden||LIVE.some(e=>e.item===i.k)));
+  const pg=GM.get("people"),showP=!!pg&&(VIEW==="all"||pg.kind===VIEW);
+  $("#peoplecard").hidden=!showP;if(pg)$("#peopleh").textContent=pg.n;
+  const pitems=showP?D.items.filter(i=>i.cat==="people"&&(!i.hidden||LIVE.some(e=>e.item===i.k))):[];
   $("#people").innerHTML=pitems.length?pitems.map(it=>{
     const es=LIVE.filter(e=>e.item===it.k),t=sums(es);
     const by=new Map();es.forEach(e=>{const k=e.contactId||personKey(e)||"";if(!by.has(k))by.set(k,[]);by.get(k).push(e)});
@@ -911,7 +996,7 @@ function renderPeople(){
       <div class="pmeta">${es.length?`${plural(es.length,"payment","payments")}. Cash ${money(t.c)}, online ${money(t.o)}.`:"No payments yet."}</div>
       <div class="pact"><button class="linkbtn" data-pay="${esc(it.k)}">Add payment</button></div>
       ${whos.map(w=>w.html).join("")}</div>`;
-  }).join(""):'<p class="empty">Add items to the “Payments to people” group from Edit items.</p>';
+  }).join(""):'<p class="empty">Add items to this group from Edit groups on the Add screen.</p>';
 
   const rows=D.contacts.map(c=>{const es=LIVE.filter(e=>e.contactId===c.id);return{c,es,t:sums(es).t}})
     .sort((a,b)=>b.t-a.t||a.c.name.localeCompare(b.c.name));
@@ -983,23 +1068,26 @@ $("#projbtn").addEventListener("click",openProjects);
 /* ---------- summary ---------- */
 function renderSummary(){
   const es=LIVE,t=sums(es);
-  const land=sums(es.filter(e=>groupOf(e)==="land")).t,build=t.t-land;
-  $("#costsplit").innerHTML=`
-    <div class="trow"><span>Building cost<br><small class="pmeta">material, people and other, without land and documents</small></span><span class="num">${money(build)}</span></div>
-    <div class="trow"><span>Land and documents</span><span class="num">${money(land)}</span></div>
-    <div class="trow total"><span>Total including land and documents</span><span class="num">${money(t.t)}</span></div>`;
+  const k=kindTotals(es);
+  $("#costsplit").innerHTML=VIEW==="all"?`
+    <div class="trow"><span>Construction</span><span class="num">${money(k.construction)}</span></div>
+    <div class="trow"><span>Documents</span><span class="num">${money(k.documents)}</span></div>
+    ${k.unknown?`<div class="trow"><span>Not sorted yet<br><small class="pmeta">groups marked Unknown, or entries without an item</small></span><span class="num">${money(k.unknown)}</span></div>`:""}
+    <div class="trow total"><span>Total</span><span class="num">${money(t.t)}</span></div>`
+    :`<div class="trow total" style="border-top:0"><span>${KINDS[VIEW]} total<br><small class="pmeta">${plural(es.length,"entry","entries")}</small></span><span class="num">${money(t.t)}</span></div>`;
   $("#mbar").innerHTML=t.t?`<i style="width:${t.c/t.t*100}%;background:var(--cash)"></i><i style="width:${t.o/t.t*100}%;background:var(--online)"></i>`:"";
   $("#mlegend").innerHTML=`<span style="color:var(--cash)">Cash ${money(t.c)}</span><span style="color:var(--online)">Online ${money(t.o)}</span>`;
   const groups=byItem(es);let html="";
-  [...GROUPS.map(g=>g[0]),"none"].forEach(cat=>{
+  [...D.groups.map(g=>g.k),"none"].forEach(cat=>{
     const gs=groups.filter(g=>g.cat===cat);if(!gs.length)return;
-    html+=`<div class="cathead"><span>${cat==="none"?"Item not set":esc(GNAME[cat])}</span><span>${money(gs.reduce((s,g)=>s+g.amt,0))}</span></div>`;
+    html+=`<div class="cathead"><span>${esc(gName(cat))}</span><span>${money(gs.reduce((s,g)=>s+g.amt,0))}</span></div>`;
     html+=gs.map(g=>`<div class="trow"><span>${esc(g.name)}</span><span class="num">${money(g.amt)}</span><span class="s">${plural(g.n,"entry","entries")}${g.qtext?". "+esc(g.qtext):""}</span></div>`).join("");
   });
   $("#byitem").innerHTML=html||'<p class="empty">Totals appear here once you add entries.</p>';
   renderGroupBar(es,t.t);renderMonthly(es);
 }
 const paintTheme=()=>$$("#theme button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.theme===lget("pe-theme","auto"))));
+function kindTotals(es){const o={construction:0,documents:0,unknown:0};es.forEach(e=>{const k=kindOf(e);o[k||"unknown"]+=+e.amount||0});return o}
 function byItem(es){
   const m=new Map();
   es.forEach(e=>{const k=e.item||"none";const g=m.get(k)||{name:itemName(e)||"Item not set",cat:groupOf(e),amt:0,n:0,q:{}};
@@ -1013,6 +1101,7 @@ $$("#theme button").forEach(b=>b.addEventListener("click",()=>{const t=b.dataset
 /* ---------- home ---------- */
 function renderHome(){
   backupNote();const t=sums(LIVE);
+  $("#h-label").textContent=VIEW==="all"?"Total spent so far":`${KINDS[VIEW]} spent so far`;
   $("#h-total").textContent=money(t.t);$("#h-cash").textContent=money(t.c);$("#h-online").textContent=money(t.o);
   const r=LIVE.slice(0,5);
   $("#recent").innerHTML=r.length?r.map(e=>rowHTML(e)).join(""):'<li class="empty">Your entries will show here.</li>';
@@ -1095,7 +1184,7 @@ async function buildExcel(){
   const list=[...LIVE].sort((a,b)=>a.ts-b.ts);let slips=0;
   for(const e of list){
     const d=new Date(e.ts),g=groupOf(e);
-    const row=ws.addRow({date:new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),item:itemName(e)||"",group:g==="none"?"":GNAME[g],
+    const row=ws.addRow({date:new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),item:itemName(e)||"",group:g==="none"?"":gName(g),
       qty:e.qty||null,unit:e.unit||"",rate:e.rate||null,amount:+e.amount||0,cash:+e.cash||0,online:+e.online||0,
       vendor:e.vendor||"",phone:phoneOf(e),note:e.note||"",slip:""});
     row.getCell("date").numFmt="dd mmm yyyy";["rate","amount","cash","online"].forEach(k=>row.getCell(k).numFmt=MONEY);
@@ -1119,16 +1208,16 @@ async function buildExcel(){
   s2.columns=[{header:"Group",key:"g",width:22},{header:"Item",key:"i",width:22},{header:"Entries",key:"n",width:9},{header:"Quantity",key:"q",width:36},{header:"Amount",key:"a",width:15}];
   head(s2.getRow(1));
   const groups=byItem(list);
-  [...GROUPS.map(g=>g[0]),"none"].forEach(cat=>groups.filter(g=>g.cat===cat).forEach(g=>{
-    const r=s2.addRow({g:cat==="none"?"Item not set":GNAME[cat],i:g.name,n:g.n,q:g.qtext,a:g.amt});r.getCell("a").numFmt=MONEY}));
+  [...D.groups.map(g=>g.k),"none"].forEach(cat=>groups.filter(g=>g.cat===cat).forEach(g=>{
+    const r=s2.addRow({g:gName(cat),i:g.name,n:g.n,q:g.qtext,a:g.amt});r.getCell("a").numFmt=MONEY}));
   s2.addRow({});
-  const t=sums(list),land=sums(list.filter(e=>groupOf(e)==="land")).t;
-  [["Building cost (without land and documents)",t.t-land],["Land and documents",land],["Total including land and documents",t.t],["Paid in cash",t.c],["Paid online",t.o]]
-    .forEach(([l,v],i)=>{const r=s2.addRow({g:l,a:v});r.getCell("a").numFmt=MONEY;if(i===2)r.font={bold:true}});
-  s2.addRow({});s2.addRow({g:`Project: ${p.name}`});s2.addRow({g:`Made on ${fdate(Date.now())} by Property Estimates`});
+  const t=sums(list),kt=kindTotals(list);
+  [["Construction",kt.construction],["Documents",kt.documents],...(kt.unknown?[["Not sorted yet",kt.unknown]]:[]),["Total",t.t],["Paid in cash",t.c],["Paid online",t.o]]
+    .forEach(([l,v])=>{const r=s2.addRow({g:l,a:v});r.getCell("a").numFmt=MONEY;if(l==="Total")r.font={bold:true}});
+  s2.addRow({});s2.addRow({g:`Project: ${p.name}${VIEW!=="all"?` (${KINDS[VIEW]} only)`:""}`});s2.addRow({g:`Made on ${fdate(Date.now())} by Property Estimates`});
 
   const buf=await wb.xlsx.writeBuffer();
-  return{blob:new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),name:`property-estimates-${slug(p.name)}-${localDay()}.xlsx`,rows:list.length,slips};
+  return{blob:new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),name:`property-estimates-${slug(p.name)}${VIEW!=="all"?"-"+VIEW:""}-${localDay()}.xlsx`,rows:list.length,slips};
 }
 $("#excel").addEventListener("click",()=>task("Preparing Excel…",async()=>{
   if(!LIVE.length){toast("No entries to export yet");return}
@@ -1157,12 +1246,12 @@ async function buildPdf(list,{title,filters}){
   y+=30;font("bold",20,INK);doc.text(pdfText(p.name),M,y);
   y+=17;font("normal",10,MUTED);
   const span=list.length?`${fdate(list[0].ts)} to ${fdate(list[list.length-1].ts)}`:"";
-  doc.splitTextToSize(pdfText(`${title}. ${plural(list.length,"entry","entries")}${span?", "+span:""}. Made on ${fdate(Date.now())}.`),CW).forEach(l=>{doc.text(l,M,y);y+=13});
+  doc.splitTextToSize(pdfText(`${title}${VIEW!=="all"?` (${KINDS[VIEW]} only)`:""}. ${plural(list.length,"entry","entries")}${span?", "+span:""}. Made on ${fdate(Date.now())}.`),CW).forEach(l=>{doc.text(l,M,y);y+=13});
   if(filters){doc.splitTextToSize(pdfText("Filters: "+filters),CW).forEach(l=>{doc.text(l,M,y);y+=13})}
 
   // totals
-  y+=6;const t=sums(list),land=sums(list.filter(e=>groupOf(e)==="land")).t;
-  const boxes=[["Building cost (without land, documents)",t.t-land],["Land and documents",land],["Total",t.t]],bw=(CW-16)/3;
+  y+=6;const t=sums(list),kt=kindTotals(list);
+  const boxes=[["Construction",kt.construction],["Documents",kt.documents],[kt.unknown?`Total (incl. ${pdfMoney(kt.unknown)} not sorted)`:"Total",t.t]],bw=(CW-16)/3;
   boxes.forEach(([l,v],i)=>{const x=M+i*(bw+8);doc.setDrawColor(...RULE);doc.setLineWidth(.8);
     if(i===2){doc.setFillColor(255,244,204);doc.roundedRect(x,y,bw,48,6,6,"FD")}else doc.roundedRect(x,y,bw,48,6,6,"S");
     font("normal",8,MUTED);doc.text(doc.splitTextToSize(l,bw-16)[0],x+8,y+15);font("bold",15,INK);doc.text(pdfMoney(v),x+8,y+37)});
@@ -1198,8 +1287,8 @@ async function buildPdf(list,{title,filters}){
   if(groups.length){
     if(y+60>BOTTOM)newPage();
     font("bold",13,INK);doc.text("By item",M,y);y+=8;
-    [...GROUPS.map(g=>g[0]),"none"].forEach(cat=>groups.filter(g=>g.cat===cat).forEach(g=>{
-      font("normal",9,MUTED);const q=doc.splitTextToSize(pdfText(`${cat==="none"?"":GNAME[cat]+". "}${plural(g.n,"entry","entries")}${g.qtext?". "+g.qtext:""}`),CW-110);
+    [...D.groups.map(g=>g.k),"none"].forEach(cat=>groups.filter(g=>g.cat===cat).forEach(g=>{
+      font("normal",9,MUTED);const q=doc.splitTextToSize(pdfText(`${cat==="none"?"":gName(cat)+". "}${plural(g.n,"entry","entries")}${g.qtext?". "+g.qtext:""}`),CW-110);
       const h=16+q.length*11;if(y+h>BOTTOM)newPage();
       font("bold",10,INK);doc.text(pdfText(g.name),M,y+14);doc.text(pdfMoney(g.amt),M+CW,y+14,{align:"right"});
       font("normal",9,MUTED);q.forEach((l,j)=>doc.text(l,M,y+26+j*11));
@@ -1225,7 +1314,7 @@ async function buildPdf(list,{title,filters}){
   // page numbers
   const n=doc.getNumberOfPages();
   for(let i=1;i<=n;i++){doc.setPage(i);font("normal",8,MUTED);doc.text(pdfText(`${p.name}   page ${i} of ${n}`),W/2,H-18,{align:"center"})}
-  return{blob:doc.output("blob"),name:`property-estimates-${slug(p.name)}-${localDay()}.pdf`};
+  return{blob:doc.output("blob"),name:`property-estimates-${slug(p.name)}${VIEW!=="all"?"-"+VIEW:""}-${localDay()}.pdf`};
 }
 async function pdfClick(btn,list,opts){
   if(!list.length){toast("No entries to export");return}
@@ -1237,6 +1326,15 @@ async function pdfClick(btn,list,opts){
 $("#pdf").addEventListener("click",()=>task("Preparing PDF…",()=>pdfClick(null,LIVE,{title:"All entries"})));
 $("#bookpdf").addEventListener("click",()=>{const tags=filterTags().map(t=>t[0]);
   pdfClick($("#bookpdf"),PB.list||[],{title:tags.length?"Passbook entries":"All entries",filters:tags.join(", ")})});
+
+/* ---------- app view: all / construction / documents ---------- */
+function paintView(){const v=$("#viewsel");v.value=VIEW;v.classList.toggle("on",VIEW!=="all");
+  const c=paintView.c||(paintView.c=document.createElement("canvas").getContext("2d"));c.font='600 14px Hind, "Noto Sans", system-ui, sans-serif';
+  v.style.width=Math.ceil(c.measureText(v.options[v.selectedIndex].text).width+46)+"px"}
+document.fonts&&document.fonts.ready.then(()=>{if(DBH)paintView()});
+$("#viewsel").addEventListener("change",()=>{VIEW=$("#viewsel").value;lset("pe-view",VIEW);F=blankF();PB.limit=150;if(PB.sel)PB.sel.clear();
+  paintView();emit();resetAdd();
+  if(VIEW!=="all"){const unk=D.groups.filter(g=>!g.kind).length;toast(unk?`${KINDS[VIEW]} only. ${plural(unk,"group is","groups are")} Unknown, set them in Edit groups.`:`Showing ${KINDS[VIEW].toLowerCase()} only`)}else toast("Showing everything")});
 
 /* ---------- top bar menus ---------- */
 const MENUS=[["m-down-b","m-down"],["m-up-b","m-up"],["m-info-b","m-info"]];
@@ -1302,7 +1400,6 @@ async function makeReceipt(sel,{history,slips}){
     y+=58;text(itemName(e)||"Payment",P,y,font(600,34),K.ink);text(money(e.amount),S-P,y,font(500,52,NUM),K.ink,"right");
     if(es.length>1){y+=36;text(fdate(e.ts),P,y,font(400,26),K.muted)}
     for(const l of sub){y+=36;text(l,P,y,font(400,27),K.muted)}
-    if(e.slipKey){y+=36;text("Slip photo attached",P,y,font(500,24),K.online)}
     y+=24;line(y);
   }
 
@@ -1332,11 +1429,9 @@ async function makeReceipt(sel,{history,slips}){
     y+=2;line(y,K.ink,3);y+=50;
     text("Total paid",P+14,y,font(600,30),K.ink);text(money(ht.t),S-P-14,y,font(500,48,NUM),K.ink,"right");
     y+=10;
-    }else{y+=50;text(`This is the first payment to ${who}.`,P,y,font(400,27),K.muted)}
+    }
   }
-  const slipN=slips?es.filter(e=>e.slipKey).length:0;
-  y+=70;text(`Made on ${fdate(Date.now())} with Property Estimates${slipN?`  ·  ${plural(slipN,"slip photo","slip photos")} sent with this receipt`:""}`,S/2,y,font(400,23),K.muted,"center");
-  y+=44;stripe(y);y+=18;
+  y+=56;stripe(y);y+=18;
 
   c.width=S;c.height=Math.ceil(y);g.fillStyle=K.paper;g.fillRect(0,0,c.width,c.height);ops.forEach(f=>f());
   const blob=await new Promise(r=>c.toBlob(r,"image/png"));
@@ -1380,11 +1475,17 @@ function openReceipt(ids){
 }
 
 /* ---------- summary charts ---------- */
-const VG=[["material","Material","var(--g1)"],["people","People","var(--g2)"],["land","Land and documents","var(--g3)"],["other","Other","var(--g4)"]];
-const vgOf=e=>{const g=groupOf(e);return g==="none"?"other":g};
+// colour follows the group: its position in the group list picks a fixed palette slot
+const gColor=k=>{const i=D.groups.findIndex(g=>g.k===k);return i>=0&&i<8?`var(--g${i+1})`:"var(--gx)"};
+function chartGroups(es){const has=new Set(es.map(groupOf));
+  const out=viewGroups().filter(g=>has.has(g.k)||VIEW!=="all"||g.kind).map(g=>[g.k,g.n,gColor(g.k)]);
+  D.groups.forEach(g=>{if(has.has(g.k)&&!out.some(o=>o[0]===g.k))out.push([g.k,g.n,gColor(g.k)])});
+  if(has.has("none"))out.push(["none","Item not set","var(--gx)"]);return out}
+const vgOf=groupOf;
 const compact=n=>{const a=Math.abs(n);return a>=1e7?"₹"+numfmt.format(Math.round(n/1e5)/100)+" Cr":a>=1e5?"₹"+numfmt.format(Math.round(n/1e4)/10)+" L":a>=1e3?"₹"+numfmt.format(Math.round(n/100)/10)+"k":"₹"+numfmt.format(Math.round(n))};
 function renderGroupBar(es,total){
-  const by=Object.fromEntries(VG.map(g=>[g[0],0]));es.forEach(e=>by[vgOf(e)]+=+e.amount||0);
+  const VG=chartGroups(es);
+  const by=Object.fromEntries(VG.map(g=>[g[0],0]));es.forEach(e=>by[vgOf(e)]=(by[vgOf(e)]||0)+(+e.amount||0));
   const shown=VG.filter(g=>by[g[0]]>0);
   $("#gbar").innerHTML=shown.map(g=>`<i style="flex:${by[g[0]]} 1 0;background:${g[2]}"></i>`).join("");
   $("#gbar").setAttribute("aria-label","Share of total: "+VG.map(g=>`${g[1]} ${money(by[g[0]])}`).join(", "));
@@ -1396,21 +1497,19 @@ function monthRows(es){
   let lo=Infinity,hi=-Infinity;es.forEach(e=>{lo=Math.min(lo,e.ts);hi=Math.max(hi,e.ts)});
   const a=new Date(lo),b=new Date(Math.max(hi,Date.now())),out=[];
   for(let y=a.getFullYear(),m=a.getMonth();y<b.getFullYear()||(y===b.getFullYear()&&m<=b.getMonth());m===11?(m=0,y++):m++)
-    out.push({y,m,g:{material:0,people:0,land:0,other:0},t:0,n:0});
+    out.push({y,m,g:{},t:0,n:0});
   const base=a.getFullYear()*12+a.getMonth();
-  es.forEach(e=>{const d=new Date(e.ts),o=out[d.getFullYear()*12+d.getMonth()-base];const v=+e.amount||0;o.g[vgOf(e)]+=v;o.t+=v;o.n++});
+  es.forEach(e=>{const d=new Date(e.ts),o=out[d.getFullYear()*12+d.getMonth()-base];const v=+e.amount||0;o.g[vgOf(e)]=(o.g[vgOf(e)]||0)+v;o.t+=v;o.n++});
   return out;
 }
 const niceMax=v=>{if(v<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(v))),f=v/p;return(f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p};
 let hideTip=null;document.addEventListener("click",()=>{if(hideTip)hideTip()});
 const rrTop=(x,y,w,h,r)=>`M${x},${y+h}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h}Z`;
-let MMODE=lget("pe-mmode","build");
-function renderMonthly(src){
-  $$("#mmode button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.m===MMODE)));
-  const es=MMODE==="build"?src.filter(e=>vgOf(e)!=="land"):src,VGm=MMODE==="build"?VG.filter(g=>g[0]!=="land"):VG;
+function renderMonthly(es){
+  const VGm=chartGroups(es);
   const all=monthRows(es),ms=all.slice(-12),wrap=$("#mchart");
   $("#mtoggle").hidden=!ms.length;
-  if(!ms.length){wrap.innerHTML=`<p class="empty">${src.length?"No building spending yet.":"The chart appears once you add entries."}</p>`;$("#mtable").innerHTML="";$("#mlg").innerHTML="";$("#mnote").textContent="";return}
+  if(!ms.length){wrap.innerHTML='<p class="empty">The chart appears once you add entries.</p>';$("#mtable").innerHTML="";$("#mlg").innerHTML="";$("#mnote").textContent="";return}
   const W=360,H=214,L=44,R=6,T=16,B=34,pw=W-L-R,ph=H-T-B,max=niceMax(Math.max(...ms.map(m=>m.t)));
   const band=pw/ms.length,bw=Math.max(6,Math.min(28,band*.62)),peak=ms.reduce((a,m,i)=>m.t>ms[a].t?i:a,0);
   let svg=`<svg class="mchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Spending by month, ${ms.map(m=>`${MON[m.m]} ${m.y}: ${money(m.t)}`).join(", ")}">`;
@@ -1443,9 +1542,8 @@ function renderMonthly(src){
   hideTip=hide;
   $("#mlg").innerHTML=VGm.map(g=>`<span><i style="background:${g[2]}"></i>${g[1]}</span>`).join("");
   $("#mtable").innerHTML=[...all].reverse().map(m=>`<div class="trow"><span>${MON[m.m]} ${m.y}</span><span class="num">${money(m.t)}</span><span class="s">${m.n?VGm.filter(g=>m.g[g[0]]>0).map(g=>`${g[1]} ${money(m.g[g[0]])}`).join(" · "):"No spending"}</span></div>`).join("");
-  $("#mnote").textContent=(all.length>12?"Showing the last 12 months. The table has every month. ":"")+(MMODE==="build"?"Land and documents are left out. ":"")+"Tap a bar to see the split.";
+  $("#mnote").textContent=(all.length>12?"Showing the last 12 months. The table has every month. ":"")+(VIEW!=="all"?`${KINDS[VIEW]} only. `:"")+"Tap a bar to see the split.";
 }
-$$("#mmode button").forEach(b=>b.addEventListener("click",()=>{MMODE=b.dataset.m;lset("pe-mmode",MMODE);renderMonthly(LIVE)}));
 $("#mtoggle").addEventListener("click",()=>{const t=$("#mtable");t.hidden=!t.hidden;$("#mtoggle").textContent=t.hidden?"Show table":"Show chart";$("#mchart").hidden=!t.hidden;$("#mlg").hidden=!t.hidden});
 
 /* ---------- backup + restore ---------- */
@@ -1453,7 +1551,7 @@ $("#backup").addEventListener("click",()=>task("Preparing backup…",async()=>{
   try{
     const slips={};
     for(const e of D.entries){if(e.slipKey&&!slips[e.slipKey]){const b=await dbGet("slips",e.slipKey);if(b)slips[e.slipKey]=await blobToData(b)}}
-    const data=JSON.stringify({app:APP,version:2,savedAt:Date.now(),projects:D.projects,contacts:D.contacts,catalog:D.items,entries:D.entries,slips});
+    const data=JSON.stringify({app:APP,version:3,savedAt:Date.now(),projects:D.projects,contacts:D.contacts,groups:D.groups,catalog:D.items,entries:D.entries,slips});
     const ok=await giveFile(`property-estimates-backup-${localDay()}.json`,new Blob([data],{type:"application/json"}));
     if(ok){lset("ghk-backup",Date.now());backupNote();toast("Backup ready")}
   }catch(err){console.error(err);toast("Couldn’t make the backup. Try again.")}
@@ -1477,6 +1575,8 @@ $("#restorefile").addEventListener("change",async ev=>{
     }
     for(const p of newProjects){await dbPut("projects",p);D.projects.push(p)}
     const pids=new Set(D.projects.map(p=>p.id));
+    if(freshPhone&&Array.isArray(d.groups)&&d.groups.length){D.groups=[];if(Array.isArray(d.catalog)&&d.catalog.length)D.items=[]}
+    for(const g of(Array.isArray(d.groups)?d.groups:[]))if(g&&g.k&&g.n&&!D.groups.some(x=>x.k===g.k))D.groups.push({k:g.k,n:g.n,kind:g.kind||null});
     for(const it of(Array.isArray(d.catalog)?d.catalog:[]))if(it&&it.k&&it.n&&!D.items.some(x=>x.k===it.k))D.items.push({...it,units:Array.isArray(it.units)?it.units:[]});
     await saveCatalog();
     const remap={};
@@ -1512,7 +1612,7 @@ if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostnam
   let ok=false;
   try{ok=await init()}catch(err){console.error(err);$("#bootmsg").textContent="Couldn’t open your data. Close the app fully and open it again."}
   if(!ok)return;
-  rebuild();resetAdd();
+  rebuild();paintView();resetAdd();
   go(location.hash.slice(1)||"add");
   $("#boot").remove();
 })();
