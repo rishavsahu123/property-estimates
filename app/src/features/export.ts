@@ -5,7 +5,7 @@ import { numfmt, fdate, localDay, round2, slug, plural, inWords } from "../lib/f
 import { dealAgreed, dealFormula, termsText } from "../lib/deals";
 import { dbGet } from "../data/db";
 import { otherNames } from "./entry-form";
-import { blobToData, filesOf } from "./files";
+import { blobToData, filesOf, photoKeyOf } from "./files";
 import { filterTags, PB } from "./passbook";
 import { byItem, kindTotals } from "./summary";
 import { AS, D, dealBal, dealInView, dealPaid, gName, groupOf, itemName, phoneOf, proj, projDeals } from "../state";
@@ -47,8 +47,8 @@ export async function buildExcel(){
       vendor:[e.vendor||"",...otherNames(e)].filter(Boolean).join("; "),phone:phoneOf(e),note:e.note||"",slip:"",files:filesOf(e).map(x=>x.name).join(", ")});
     row.getCell("date").numFmt="dd mmm yyyy";["rate","amount","cash","online"].forEach(k=>row.getCell(k).numFmt=MONEY);
     row.alignment={vertical:"top",wrapText:true};
-    if(e.slipKey){
-      const blob=await dbGet("slips",e.slipKey);
+    if(photoKeyOf(e)){
+      const blob=await dbGet("slips",photoKeyOf(e));
       if(blob){
         const ext=/png/.test(blob.type)?"png":"jpeg";const{w,h}=await imgSize(blob);
         let H=120,W=Math.round(H*w/h);if(W>165){W=165;H=Math.round(W*h/w)}
@@ -97,7 +97,7 @@ export async function buildPdf(list,{title,filters}){
   const INK=[28,43,58],MUTED=[93,107,119],RULE=[204,213,206],TAPE=[242,183,5],RED=[163,49,42];
   const p=proj();let y=M;
   list=[...list].sort((a,b)=>a.ts-b.ts);
-  const slipNo=new Map();list.forEach(e=>{if(e.slipKey)slipNo.set(e.id,slipNo.size+1)});
+  const slipNo=new Map();list.forEach(e=>{if(photoKeyOf(e))slipNo.set(e.id,slipNo.size+1)});
   const font=(style,size,color)=>{doc.setFont("helvetica",style);doc.setFontSize(size);doc.setTextColor(...color)};
   const stripe=()=>{for(let x=-20;x<W;x+=24){doc.setFillColor(...TAPE);doc.triangle(x,0,x+12,0,x+6,6,"F")}doc.setFillColor(...TAPE);doc.rect(0,0,W,3,"F")};
   const newPage=()=>{doc.addPage();stripe();y=M};
@@ -174,7 +174,7 @@ export async function buildPdf(list,{title,filters}){
   const withSlip=list.filter(e=>slipNo.has(e.id));
   const slotH=(H-2*M-30)/2;let slot=2;
   for(const e of withSlip){
-    const blob=await dbGet("slips",e.slipKey);if(!blob)continue;
+    const blob=await dbGet("slips",photoKeyOf(e));if(!blob)continue;
     if(slot===2){newPage();font("bold",13,INK);doc.text("Slip photos",M,y+4);y+=20;slot=0}
     const top=y+slot*slotH;
     font("bold",10,INK);doc.text(pdfText(`Slip ${slipNo.get(e.id)}   ${fdate(e.ts)}   ${itemName(e)||"Item not set"}   ${pdfMoney(e.amount)}`),M,top+10);

@@ -44,8 +44,8 @@ export async function makeReceipt(sel,{history,slips,deal}){
   y+=50;text(t.c&&t.o?`Cash ${money(t.c)}   ·   Online ${money(t.o)}`:t.c?"Paid in cash":"Paid online",P,y,font(500,30),K.ink);
   y+=40;line(y);y+=4;
 
-  // details of the selected payments
-  for(const e of es){
+  // details of the selected payments, newest first
+  for(const e of [...es].reverse()){
     const bits=[e.qty?`${numfmt.format(e.qty)} ${e.unit||""}${e.rate?` @ ${money(e.rate)}`:""}`:"",!single&&e.vendor?e.vendor:"",otherNames(e).length?"with "+otherNames(e).join(", "):"",e.note||"",es.length>1?modeTxt(e):""].filter(Boolean).join(" · ");
     const sub=bits?wrapT(bits,font(400,27),CWr-260):[];
     y+=58;text(itemName(e)||"Payment",P,y,font(600,34),K.ink);text(money(e.amount),S-P,y,font(500,52,NUM),K.ink,"right");
@@ -69,17 +69,18 @@ export async function makeReceipt(sel,{history,slips,deal}){
   // account history for the same person
   if(history&&single){
     const maxTs=last.ts,selIds=new Set(es.map(e=>e.id));
-    const hist=AS.LIVE.filter(e=>personOf(e)===pk&&e.ts<=maxTs).sort((a,b)=>a.ts-b.ts),ht=sums(hist);
-    if(hist.length>es.length){
+    const hist=D.entries.filter(e=>!e.deletedAt&&e.projectId===D.pid&&personOf(e)===pk&&e.ts<=maxTs).sort((a,b)=>a.ts-b.ts),ht=sums(hist);
+    const runOf=new Map();{let r=0;for(const e of hist){r+=+e.amount||0;runOf.set(e.id,r)}}
+    if(hist.length>1){
     y+=78;for(const l of wrapT(`All payments to ${who} till ${fdate(maxTs)}`,font(600,36),CWr)){text(l,P,y,font(600,36),K.ink);y+=46}
     y-=8;text(`${plural(hist.length,"payment","payments")}   ·   Cash ${money(ht.c)}   ·   Online ${money(ht.o)}`,P,y,font(400,27),K.muted);
     y+=28;
     const cx=[P+14,P+196,S-P-450,S-P-196,S-P-14];
     box(P,y,CWr,52,K.tape);
     [["Date",0,"left"],["Item",1,"left"],["Paid by",2,"left"],["Amount",3,"right"],["Total so far",4,"right"]].forEach(([h,i,al])=>text(h,cx[i],y+35,font(600,25),K.dark,al));
-    y+=52;let run=0;
-    for(const e of hist){
-      run+=+e.amount||0;
+    y+=52;
+    for(const e of [...hist].reverse()){
+      const run=runOf.get(e.id);
       const il=wrapT(itemName(e)||"Payment",font(400,27),cx[2]-cx[1]-16).slice(0,2),h=Math.max(1,il.length)*34+20;
       if(selIds.has(e.id))box(P,y,CWr,h,K.hl);
       text(fdate(e.ts),cx[0],y+40,font(400,26),K.ink);

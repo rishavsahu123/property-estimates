@@ -13,7 +13,7 @@ const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
   // slip entry for another person, no deal
   await page.click('nav [data-go="add"]');
   await page.fill(F('amount'), '14500'); await page.fill(F('vendor'), 'Wonder Cement');
-  await page.setInputFiles(F('file'), { name: 's.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') });
+  await page.setInputFiles(F('docs'), { name: 's.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') });
   await page.click(F('save')); await page.waitForTimeout(500);
   await page.click('nav [data-go="book"]');
   const ids = await page.$$eval('#book .entry', b => b.map(x => [x.dataset.id, x.innerText]));

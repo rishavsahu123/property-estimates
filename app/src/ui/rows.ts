@@ -1,8 +1,8 @@
 // @ts-nocheck
 // Passbook row markup shared by every list.
-import { esc, money, numfmt, MON, plural, inWords } from "../lib/format";
+import { esc, money, numfmt, MON } from "../lib/format";
 import { openView, otherNames } from "../features/entry-form";
-import { attachCount, filesOf } from "../features/files";
+import { attachIcons } from "../features/files";
 import { ICON } from "../features/people";
 import { D, itemName } from "../state";
 import { $$ } from "./dom";
@@ -13,7 +13,6 @@ export function rowHTML(e,bal,sel,acts,opt={}){
   if(e.vendor&&!opt.noVendor)bits.push(esc(e.vendor));
   const on=otherNames(e);if(on.length)bits.push("with "+esc(on.join(", ")));
   const dli=e.dealId&&D.deals.find(x=>x.id===e.dealId);if(dli&&!opt.noDeal)bits.push("deal: "+esc(dli.title));
-  if(e.note)bits.push(esc(e.note));
   const mode=e.cash&&e.online?`<span class="tag cash">Cash ${money(e.cash)}</span><br><span class="tag online">Online ${money(e.online)}</span>`
     :e.cash?'<span class="tag cash">Cash</span>':'<span class="tag online">Online</span>';
   return `<li><button class="entry" data-id="${esc(e.id)}"${sel==null?"":` aria-pressed="${!!sel}"`}>
@@ -21,8 +20,8 @@ export function rowHTML(e,bal,sel,acts,opt={}){
     <span class="dt"><span class="d">${d.getDate()}</span><span class="m">${MON[d.getMonth()]} ${String(d.getFullYear()).slice(2)}</span></span>
     <span class="part"><span class="t">${name?esc(name):'<span class="missing">Set item</span>'}</span>
       <span class="s" style="display:block">${bits.join(", ")}</span>
-      <span class="w">${inWords(e.amount)}</span>
-      ${attachCount(e)?`<span class="clip">${[e.slipKey?"Slip":"",filesOf(e).length?plural(filesOf(e).length,"file","files"):""].filter(Boolean).join(" + ")} attached</span>`:""}</span>
+      ${e.note?`<span class="rnote">${esc(e.note)}</span>`:""}
+      ${attachIcons(e)}</span>
     <span class="amt"><span class="num">${money(e.amount)}</span><br>${mode}${bal!=null?`<span class="bal">Total ${money(bal)}</span>`:""}</span>
   </button>${acts?`<div class="ract"><button class="ib" data-ra="share" data-id="${esc(e.id)}" aria-label="Share receipt">${ICON.share}</button><button class="ib" data-ra="edit" data-id="${esc(e.id)}" aria-label="Edit entry">${ICON.edit}</button><button class="ib red" data-ra="del" data-id="${esc(e.id)}" aria-label="Move to trash">${ICON.trash}</button></div>`:""}</li>`;
 }

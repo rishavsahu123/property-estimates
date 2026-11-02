@@ -40,9 +40,11 @@ export function makeForm(root,{entry,onDone,onCancel}){
     <div class="hint" data-f="hint"></div>
     <span class="lbl">Shop or person</span>
     <div class="stack">
-      <input class="field" data-f="vendor" placeholder="e.g. Sharma Cement Store" autocomplete="off" aria-label="Shop or person">
       <div class="chips" data-f="vendorSug"></div>
-      <input class="field" data-f="phone" type="tel" inputmode="tel" placeholder="Mobile number (optional)" autocomplete="off" aria-label="Mobile number">
+      <div class="who2">
+        <input class="field" data-f="vendor" placeholder="Name, e.g. Sharma Cement" autocomplete="off" aria-label="Shop or person">
+        <input class="field" data-f="phone" type="tel" inputmode="tel" placeholder="Mobile (optional)" autocomplete="off" aria-label="Mobile number">
+      </div>
       <div data-f="dealWrap" hidden><span class="lbl" style="margin-top:4px">Count this payment against</span><div class="chips" data-f="deal" role="group" aria-label="Count this payment against"></div><div class="hint" data-f="dealHint"></div></div>
       <div class="stack" data-f="others"></div>
       <button type="button" class="linkbtn" data-f="addOther" style="justify-self:start">+ Add another person</button>
@@ -51,14 +53,13 @@ export function makeForm(root,{entry,onDone,onCancel}){
     <input class="field" data-f="note" placeholder="e.g. Slip kept in diary, 2nd floor" autocomplete="off">
     <span class="lbl">Date</span><input class="field" type="date" data-f="when" aria-label="Date of payment">
     <div class="slip">
-      <label class="slipbtn"><input type="file" accept="image/*" data-f="file" hidden><span data-f="sliplbl">Add slip photo</span></label>
-      <img class="thumb" data-f="thumb" alt="Slip preview" hidden>
-      <button type="button" class="linkbtn" data-f="rmslip" hidden>Remove photo</button>
-      <label class="slipbtn"><input type="file" accept="${DOC_ACCEPT}" multiple data-f="docs" hidden>Attach file</label>
+      <label class="slipbtn"><input type="file" accept="${DOC_ACCEPT}" multiple data-f="docs" hidden>Attach slip photo or file</label>
     </div>
     <div class="docs" data-f="doclist"></div>
-    <button type="button" class="primary" data-f="save">${editing?"Save changes":"Save entry"}</button>
-    ${onCancel?'<button type="button" class="second" data-f="cancel">Cancel</button>':""}`;
+    <div class="savebar${onCancel?" two":""}">
+      ${onCancel?'<button type="button" class="second" data-f="cancel">Cancel</button>':""}
+      <button type="button" class="primary" data-f="save">${editing?"Save changes":"Save entry"}</button>
+    </div>`;
   const f=n=>root.querySelector(`[data-f="${n}"]`);
   const amount=f("amount"),qty=f("qty"),rate=f("rate"),unit=f("unit"),cash=f("cash"),online=f("online"),vendor=f("vendor"),phone=f("phone");
 
@@ -95,7 +96,7 @@ export function makeForm(root,{entry,onDone,onCancel}){
     else{const byItem=st.item?recent(AS.LIVE.filter(e=>e.item===st.item)):[];list=byItem.length?byItem:recent(AS.LIVE)}
     list=list.slice(0,3);
     box.innerHTML=list.map(c=>`<button type="button" class="chip" data-c="${esc(c.id)}">${esc(c.name)}</button>`).join("");
-    box.hidden=!list.length;vendor.placeholder=list.length&&!q?"Type a name or pick one below":"e.g. Sharma Cement Store";
+    box.hidden=!list.length;vendor.placeholder=list.length&&!q?"Name, or tap one above":"Name, e.g. Sharma Cement";
     $$("[data-c]",box).forEach(b=>b.addEventListener("click",()=>{const c=AS.CM.get(b.dataset.c);if(!c)return;vendor.value=c.name;phone.value=c.phone||"";st.dealTouched=false;paintSug();paintDeal()}));
   }
   function addOther(o){
@@ -162,16 +163,13 @@ export function makeForm(root,{entry,onDone,onCancel}){
   cash.addEventListener("input",()=>splitInput("cash"));online.addEventListener("input",()=>splitInput("online"));
   vendor.addEventListener("input",()=>{const q=vendor.value.trim().toLowerCase();const m=D.contacts.find(c=>c.name.toLowerCase()===q);
     if(m&&m.phone&&!phone.value)phone.value=m.phone;paintSug();paintDeal()});
-  f("file").addEventListener("change",e=>{const file=e.target.files[0];if(!file)return;st.file=file;st.removeSlip=false;
-    const t=f("thumb");t.src=URL.createObjectURL(file);t.hidden=false;f("rmslip").hidden=false;f("sliplbl").textContent="Change photo"});
-  f("rmslip").addEventListener("click",()=>{st.file=null;st.removeSlip=true;f("file").value="";f("thumb").hidden=true;f("rmslip").hidden=true;f("sliplbl").textContent="Add slip photo"});
-  f("thumb").addEventListener("click",()=>{const s=f("thumb").src;if(s)viewSlip(s)});
   // documents: kept as File objects until Save, so Cancel leaves nothing behind
   function paintDocs(){const box=f("doclist");
-    box.innerHTML=st.files.map(x=>docChip(x,true)).join("")+st.newDocs.map((x,i)=>docChip({key:"new"+i,name:x.name,size:x.size},true)).join("");
+    box.innerHTML=(entry?.slipKey&&!st.removeSlip?docChip({key:"slip",name:"Slip photo"},true):"")+st.files.map(x=>docChip(x,true)).join("")+st.newDocs.map((x,i)=>docChip({key:"new"+i,name:x.name,size:x.size},true)).join("");
     $$("[data-rmdoc]",box).forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.rmdoc;
-      if(k.startsWith("new"))st.newDocs.splice(+k.slice(3),1);else st.files=st.files.filter(x=>x.key!==k);paintDocs()}));
+      if(k==="slip")st.removeSlip=true;else if(k.startsWith("new"))st.newDocs.splice(+k.slice(3),1);else st.files=st.files.filter(x=>x.key!==k);paintDocs()}));
     $$("[data-doc]",box).forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.doc;
+      if(k==="slip"){slipURL(entry.slipKey).then(u=>{if(u)viewSlip(u)});return}
       if(k.startsWith("new")){const x=st.newDocs[+k.slice(3)];if(x)giveFile(x.name,x)}else{const x=st.files.find(y=>y.key===k);if(x)openDoc(x)}}))}
   f("docs").addEventListener("change",ev=>{const picked=[...ev.target.files];ev.target.value="";let bad=0,big=0;
     for(const x of picked){if(!docOk(x)){bad++;continue}if(x.size>MAX_DOC){big++;continue}st.newDocs.push(x)}
@@ -185,7 +183,6 @@ export function makeForm(root,{entry,onDone,onCancel}){
     if(st.mode==="both"){cash.value=entry.cash;online.value=entry.online;st.splitSrc="cash"}
     othersOf(entry).forEach(o=>addOther(o));
     f("when").value=localDay(new Date(entry.ts));
-    if(entry.slipKey)slipURL(entry.slipKey).then(u=>{if(u&&!st.file&&!st.removeSlip){f("thumb").src=u;f("thumb").hidden=false;f("rmslip").hidden=false;f("sliplbl").textContent="Change photo"}});
   }
   if(!entry)f("when").value=localDay();
   paintItem();

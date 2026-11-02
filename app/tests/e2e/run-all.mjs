@@ -28,7 +28,7 @@ const server = createServer((req, res) => {
 // tests that start from an older version of the app on the same address
 const BEFORE = { t01: () => { const f = join(SERVE, "index.html"); cpSync(join(FIX, "index-v1.html"), f); chmodSync(f, 0o644); } };
 // tests that click Cancel themselves; the rest get the confirm box accepted automatically
-const OWN_DIALOGS = new Set(["t21", "t22", "t23"]);
+const OWN_DIALOGS = new Set(["t21", "t22", "t23", "t25"]);
 
 const pick = process.argv.slice(2);
 const tests = readdirSync(here).filter(f => /^t\d+\.cjs$/.test(f)).sort().filter(f => !pick.length || pick.includes(f.replace(".cjs", "")));

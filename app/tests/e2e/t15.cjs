@@ -20,7 +20,7 @@ const fs = require('fs');
   await page.screenshot({ path: 'f1-form.png', fullPage: true });
   await page.click(F('save')); await page.waitForTimeout(400);
   r.blobsAfterSave = await count();
-  r.recentClip = await page.$eval('#recent .clip', c => c.textContent);
+  r.recentClip = await page.$eval('#recent .fics', c => c.textContent);
   // view
   await page.click('nav [data-go="book"]'); await page.click('#book .entry');
   r.viewFiles = await page.$$eval('.sheet .docs .dn', d => d.map(x => x.textContent));
