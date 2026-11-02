@@ -1,7 +1,7 @@
 // Runs every end-to-end script against the built app (npm run build first).
 // Usage: node tests/e2e/run-all.mjs [t05 t13 ...]
 import { createServer } from "node:http";
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { dirname, extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
@@ -26,7 +26,7 @@ const server = createServer((req, res) => {
 }).listen(8090);
 
 // tests that start from an older version of the app on the same address
-const BEFORE = { t01: () => cpSync(join(FIX, "index-v1.html"), join(SERVE, "index.html")) };
+const BEFORE = { t01: () => { const f = join(SERVE, "index.html"); cpSync(join(FIX, "index-v1.html"), f); chmodSync(f, 0o644); } };
 // tests that click Cancel themselves; the rest get the confirm box accepted automatically
 const OWN_DIALOGS = new Set(["t21", "t22", "t23"]);
 

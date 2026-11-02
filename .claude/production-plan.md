@@ -184,7 +184,11 @@ You can start the Razorpay KYC and Google Cloud setup now, in parallel with Phas
   - 20 unit tests and 22 browser tests (`npm run e2e`) pass on the build.
   - `.github/workflows/deploy.yml` deploys `app/dist` to Pages.
   - The old root files stay live until Pages is switched to "GitHub Actions".
+- Milestone 2 (2 Nov 2026), done:
+  - Live site switched to the Actions build. Old root files moved to `old/js-v2.10.2/`.
+  - `legacy/app.ts` split into 20 modules: state, ui/{dom,sheets,rows,topbar}, features/{deals,entry-form,passbook,people,projects,summary,home,trash,export,receipt,backup,catalog,files}, app/{nav,boot}.
+  - All 24 browser tests pass.
 - Next milestones:
-  1. Split `legacy/app.ts` into typed modules: state store, sheets/dialog, entry form, passbook, people/deals, summary/charts, receipt, export, backup.
+  1. Remove @ts-nocheck module by module (strict types), starting with state, deals, passbook.
   2. Turn the test scripts into assertion-based Playwright tests.
-  3. Cut over and move the root JS files into `old/`.
+

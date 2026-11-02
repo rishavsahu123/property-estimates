@@ -1,2 +1,2 @@
 import "./styles/app.css";
-import "./legacy/app";
+import "./app/boot";
