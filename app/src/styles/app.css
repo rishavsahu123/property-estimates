@@ -78,6 +78,7 @@ button{cursor:pointer}
 .selbar .del{border:0;background:transparent;color:var(--card);width:40px;height:40px;display:grid;place-items:center;border-radius:10px}
 .selbar .del svg{width:20px;height:20px}
 .selbar .del:disabled{opacity:.4}
+#book .entry{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 
 /* card + form */
 .card{background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:14px}

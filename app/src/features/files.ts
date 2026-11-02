@@ -50,7 +50,7 @@ export function attachIcons(e){
   const n=new Map();if(e.slipKey)n.set("img",1);
   for(const f of filesOf(e)){const k=fileKind(f);n.set(k,(n.get(k)||0)+1)}
   if(!n.size)return"";
-  return `<span class="fics">${[...n].map(([k,c])=>`<span class="fic fic-${k}" title="${KIND_LABEL[k]}"><svg viewBox="0 0 24 24" aria-hidden="true">${KIND_SVG[k]}</svg>${KIND_LABEL[k]}${c>1?` ×${c}`:""}</span>`).join("")}</span>`;
+  return `<span class="fics">${[...n].map(([k,c])=>`<span class="fic fic-${k}"><svg viewBox="0 0 24 24" aria-hidden="true">${KIND_SVG[k]}</svg>${KIND_LABEL[k]}${c>1?` ×${c}`:""}</span>`).join("")}</span>`;
 }
 /** one photo per entry for Excel and PDF: the old slip photo, else the first JPEG/PNG file */
 export const photoKeyOf=e=>e.slipKey||filesOf(e).find(x=>/^image\/(jpeg|png)$/.test(x.type||""))?.key||null;

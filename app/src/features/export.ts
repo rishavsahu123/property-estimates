@@ -1,7 +1,8 @@
 // @ts-nocheck
 // Excel and PDF exports.
+import { openSheet } from "../ui/sheets";
 import { KINDS } from "../lib/constants";
-import { numfmt, fdate, localDay, round2, slug, plural, inWords } from "../lib/format";
+import { numfmt, fdate, localDay, round2, slug, plural, inWords, money } from "../lib/format";
 import { dealAgreed, dealFormula, termsText } from "../lib/deals";
 import { dbGet } from "../data/db";
 import { otherNames } from "./entry-form";
@@ -9,7 +10,7 @@ import { blobToData, filesOf, photoKeyOf } from "./files";
 import { filterTags, PB } from "./passbook";
 import { byItem, kindTotals } from "./summary";
 import { AS, D, dealBal, dealInView, dealPaid, gName, groupOf, itemName, phoneOf, proj, projDeals } from "../state";
-import { $, toast } from "../ui/dom";
+import { $, toast, $$ } from "../ui/dom";
 import { sums } from "../ui/rows";
 import { task } from "../ui/topbar";
 
@@ -90,14 +91,14 @@ $("#excel").addEventListener("click",()=>task("Preparing Excel…",async()=>{
 
 export const pdfMoney=n=>"Rs "+numfmt.format(round2(+n||0));
 export const pdfText=s=>String(s??"").replace(/₹\s?/g,"Rs ").replace(/[–—]/g,"-").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/×/g,"x");
-export async function buildPdf(list,{title,filters}){
+export async function buildPdf(list,{title,filters,photos=true}){
   await loadLib("jspdf.umd.min.js",()=>window.jspdf&&window.jspdf.jsPDF);
   const doc=new window.jspdf.jsPDF({unit:"pt",format:"a4",compress:true});
   const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=36,CW=W-2*M,BOTTOM=H-M-16;
   const INK=[28,43,58],MUTED=[93,107,119],RULE=[204,213,206],TAPE=[242,183,5],RED=[163,49,42];
   const p=proj();let y=M;
   list=[...list].sort((a,b)=>a.ts-b.ts);
-  const slipNo=new Map();list.forEach(e=>{if(photoKeyOf(e))slipNo.set(e.id,slipNo.size+1)});
+  const slipNo=new Map();if(photos)list.forEach(e=>{if(photoKeyOf(e))slipNo.set(e.id,slipNo.size+1)});
   const font=(style,size,color)=>{doc.setFont("helvetica",style);doc.setFontSize(size);doc.setTextColor(...color)};
   const stripe=()=>{for(let x=-20;x<W;x+=24){doc.setFillColor(...TAPE);doc.triangle(x,0,x+12,0,x+6,6,"F")}doc.setFillColor(...TAPE);doc.rect(0,0,W,3,"F")};
   const newPage=()=>{doc.addPage();stripe();y=M};
@@ -122,14 +123,15 @@ export async function buildPdf(list,{title,filters}){
   y+=18;
 
   // entries table
-  const cols=[{h:"Date",w:64},{h:"Item",w:84},{h:"Details",w:183},{h:"Paid by",w:76},{h:"Amount",w:72,r:true},{h:"Slip",w:CW-479}];
+  const cols=photos?[{h:"Date",w:64},{h:"Item",w:84},{h:"Details",w:183},{h:"Paid by",w:76},{h:"Amount",w:72,r:true},{h:"Slip",w:CW-479}]
+    :[{h:"Date",w:64},{h:"Item",w:84},{h:"Details",w:CW-296},{h:"Paid by",w:76},{h:"Amount",w:72,r:true}];
   const head=()=>{doc.setFillColor(...TAPE);doc.rect(M,y,CW,18,"F");font("bold",9,[26,26,26]);let x=M;
     cols.forEach(c=>{doc.text(c.h,c.r?x+c.w-4:x+4,y+12.5,c.r?{align:"right"}:undefined);x+=c.w});y+=18};
   head();
   for(const e of list){
     const det=[e.qty?`${numfmt.format(e.qty)} ${e.unit||""}${e.rate?` @ ${pdfMoney(e.rate)}`:""}`:"",e.vendor||"",phoneOf(e),otherNames(e).length?"with "+otherNames(e).join(", "):"",e.note||"",filesOf(e).length?"files: "+filesOf(e).map(x=>x.name).join(", "):""].filter(Boolean).join(", ");
     const paid=e.cash&&e.online?`Cash ${pdfMoney(e.cash)}\nOnline ${pdfMoney(e.online)}`:e.cash?"Cash":"Online";
-    const cells=[fdate(e.ts),itemName(e)||"Item not set",det,paid,pdfMoney(e.amount),slipNo.has(e.id)?`Slip ${slipNo.get(e.id)}`:""];
+    const cells=[fdate(e.ts),itemName(e)||"Item not set",det,paid,pdfMoney(e.amount),slipNo.has(e.id)?`Slip ${slipNo.get(e.id)}`:""].slice(0,cols.length);
     font("normal",9,INK);
     const lines=cells.map((c,i)=>doc.splitTextToSize(pdfText(c),cols[i].w-8));
     const h=Math.max(...lines.map(l=>l.length))*11+8;
@@ -197,6 +199,16 @@ export async function pdfClick(btn,list,opts){
   catch(err){console.error(err);toast(err&&err.message==="lib"?"Couldn’t load the PDF tool. Open the app once with internet, then try again.":"Couldn’t make the PDF. Try again.")}
   if(btn){btn.disabled=false;btn.textContent=label}
 }
-$("#pdf").addEventListener("click",()=>task("Preparing PDF…",()=>pdfClick(null,AS.LIVE,{title:"All entries"})));
-$("#bookpdf").addEventListener("click",()=>{const tags=filterTags().map(t=>t[0]);
-  pdfClick($("#bookpdf"),PB.list||[],{title:tags.length?"Passbook entries":"All entries",filters:tags.join(", ")})});
+$("#pdf").addEventListener("click",()=>task("Preparing PDF…",()=>pdfClick(null,AS.LIVE,{title:"All entries",photos:false})));
+$("#pdf-photos").addEventListener("click",()=>task("Preparing PDF…",()=>pdfClick(null,AS.LIVE,{title:"All entries",photos:true})));
+/** PDF of picked entries: asks with or without slip photos */
+export function pdfOfEntries(list,title){
+  if(!list.length){toast("No entries to export");return}
+  const nPh=list.filter(e=>photoKeyOf(e)).length;
+  const s=openSheet("PDF of these entries",`
+    <p class="pmeta" style="margin:0 0 4px">${plural(list.length,"entry","entries")} · ${money(sums(list).t)}</p>
+    <button class="primary" data-pp="0">PDF report</button>
+    <button class="second" data-pp="1"${nPh?"":" disabled"}>PDF with slip photos${nPh?` (${nPh})`:" (none attached)"}</button>`);
+  $$("[data-pp]",s.body).forEach(b=>b.addEventListener("click",()=>{const photos=b.dataset.pp==="1";s.close();
+    task("Preparing PDF…",()=>pdfClick(null,list,{title,photos}))}));
+}

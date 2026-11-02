@@ -44,8 +44,12 @@ export async function makeReceipt(sel,{history,slips,deal}){
   y+=50;text(t.c&&t.o?`Cash ${money(t.c)}   ·   Online ${money(t.o)}`:t.c?"Paid in cash":"Paid online",P,y,font(500,30),K.ink);
   y+=40;line(y);y+=4;
 
+  // past payments table (same person) — when it is drawn, the picked payments are shown only there, highlighted
+  const histAll=history&&single?D.entries.filter(e=>!e.deletedAt&&e.projectId===D.pid&&personOf(e)===pk&&e.ts<=last.ts).sort((a,b)=>a.ts-b.ts):[];
+  const showHist=histAll.length>1;
+  const detailOf=e=>[e.qty?`${numfmt.format(e.qty)} ${e.unit||""}${e.rate?` @ ${money(e.rate)}`:""}`:"",otherNames(e).length?"with "+otherNames(e).join(", "):"",e.note||""].filter(Boolean).join(" · ");
   // details of the selected payments, newest first
-  for(const e of [...es].reverse()){
+  for(const e of showHist?[]:[...es].reverse()){
     const bits=[e.qty?`${numfmt.format(e.qty)} ${e.unit||""}${e.rate?` @ ${money(e.rate)}`:""}`:"",!single&&e.vendor?e.vendor:"",otherNames(e).length?"with "+otherNames(e).join(", "):"",e.note||"",es.length>1?modeTxt(e):""].filter(Boolean).join(" · ");
     const sub=bits?wrapT(bits,font(400,27),CWr-260):[];
     y+=58;text(itemName(e)||"Payment",P,y,font(600,34),K.ink);text(money(e.amount),S-P,y,font(500,52,NUM),K.ink,"right");
@@ -67,13 +71,14 @@ export async function makeReceipt(sel,{history,slips,deal}){
   }
 
   // account history for the same person
-  if(history&&single){
+  if(showHist){
     const maxTs=last.ts,selIds=new Set(es.map(e=>e.id));
-    const hist=D.entries.filter(e=>!e.deletedAt&&e.projectId===D.pid&&personOf(e)===pk&&e.ts<=maxTs).sort((a,b)=>a.ts-b.ts),ht=sums(hist);
+    const hist=histAll,ht=sums(hist);
     const runOf=new Map();{let r=0;for(const e of hist){r+=+e.amount||0;runOf.set(e.id,r)}}
     if(hist.length>1){
     y+=78;for(const l of wrapT(`All payments to ${who} till ${fdate(maxTs)}`,font(600,36),CWr)){text(l,P,y,font(600,36),K.ink);y+=46}
     y-=8;text(`${plural(hist.length,"payment","payments")}   ·   Cash ${money(ht.c)}   ·   Online ${money(ht.o)}`,P,y,font(400,27),K.muted);
+    if(hist.length>es.length){y+=36;text("Highlighted rows are the payments in this receipt",P,y,font(400,24),K.muted)}
     y+=28;
     const cx=[P+14,P+196,S-P-450,S-P-196,S-P-14];
     box(P,y,CWr,52,K.tape);
@@ -81,10 +86,11 @@ export async function makeReceipt(sel,{history,slips,deal}){
     y+=52;
     for(const e of [...hist].reverse()){
       const run=runOf.get(e.id);
-      const il=wrapT(itemName(e)||"Payment",font(400,27),cx[2]-cx[1]-16).slice(0,2),h=Math.max(1,il.length)*34+20;
+      const il=wrapT(itemName(e)||"Payment",font(400,27),cx[2]-cx[1]-16).slice(0,2),dl2=detailOf(e)?wrapT(detailOf(e),font(400,22),cx[2]-cx[1]-16).slice(0,2):[],h=Math.max(1,il.length)*34+dl2.length*28+20;
       if(selIds.has(e.id))box(P,y,CWr,h,K.hl);
       text(fdate(e.ts),cx[0],y+40,font(400,26),K.ink);
       il.forEach((l,j)=>text(l,cx[1],y+40+j*34,font(selIds.has(e.id)?600:400,27),K.ink));
+      dl2.forEach((l,j)=>text(l,cx[1],y+40+il.length*34+j*28-6,font(400,22),K.muted));
       text(e.cash&&e.online?"Both":e.cash?"Cash":"Online",cx[2],y+40,font(400,26),K.muted);
       text(money(e.amount),cx[3],y+40,font(500,34,NUM),K.ink,"right");
       text(money(run),cx[4],y+40,font(500,34,NUM),K.muted,"right");

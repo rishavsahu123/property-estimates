@@ -1,5 +1,6 @@
 // @ts-nocheck
 // Passbook: list, filters, sort, select mode.
+import { pdfOfEntries } from "./export";
 import { RANGES } from "../lib/constants";
 import { esc, money, shortDay, pnum, plural, inWords } from "../lib/format";
 import { openView, othersOf, personKeys, trashWithUndo } from "./entry-form";
@@ -123,11 +124,13 @@ export function renderBook(){
   $("#book").innerHTML=list.length?list.slice(0,PB.limit).map(e=>rowHTML(e,showBal?run[e.id]:null,PB.sel?PB.sel.has(e.id):null,true)).join("")
     :`<li class="empty">${AS.LIVE.length?"No entries match these filters.":"No entries yet. Add your first payment from the Add tab."}</li>`;
   $("#bookmore").hidden=list.length<=PB.limit;
-  PB.list=list;$("#bookpdf").hidden=!list.length||!!PB.sel;
-  $$(".entry",$("#book")).forEach(b=>b.addEventListener("click",()=>{
+  PB.list=list;
+  $$(".entry",$("#book")).forEach(b=>{longPress(b,()=>{if(PB.sel)return;PB.sel=new Set([b.dataset.id]);PB.lpAt=Date.now();try{navigator.vibrate&&navigator.vibrate(15)}catch{}renderBook()});
+    b.addEventListener("click",()=>{
+    if(PB.lpAt){PB.lpAt=0;return} // the finger lifting after a long press is not a tap
     if(!PB.sel){openView(b.dataset.id);return}
     const id=b.dataset.id;if(PB.sel.has(id))PB.sel.delete(id);else PB.sel.add(id);
-    b.setAttribute("aria-pressed",String(PB.sel.has(id)));paintSel()}));
+    b.setAttribute("aria-pressed",String(PB.sel.has(id)));paintSel()})});
   $$("[data-ra]",$("#book")).forEach(b=>b.addEventListener("click",()=>{const id=b.dataset.id,a=b.dataset.ra;
     if(a==="share")openReceipt([id]);else if(a==="edit")openView(id,{edit:true});
     else{const e=AS.LIVE.find(x=>x.id===id);if(e)trashWithUndo(e)}}));
@@ -140,13 +143,25 @@ export function paintSel(){
   if(!on)return;
   const es=AS.LIVE.filter(e=>PB.sel.has(e.id));
   $("#sel-n").textContent=es.length?`${es.length} selected`:"Tap entries to select";
-  $("#sel-t").textContent=money(sums(es).t);$("#sel-share").disabled=!es.length;$("#sel-del").disabled=!es.length;
+  $("#sel-t").textContent=money(sums(es).t);$("#sel-share").disabled=!es.length;$("#sel-del").disabled=!es.length;$("#sel-pdf").disabled=!es.length;
 }
 $("#selbtn").addEventListener("click",()=>{PB.sel=PB.sel?null:new Set();renderBook()});
 $("#selall").addEventListener("click",()=>{if(!PB.sel)return;const ids=(PB.list||[]).map(e=>e.id);
   const all=ids.every(id=>PB.sel.has(id));ids.forEach(id=>all?PB.sel.delete(id):PB.sel.add(id));renderBook()});
 $("#sel-x").addEventListener("click",()=>{PB.sel=null;renderBook()});
 $("#sel-share").addEventListener("click",()=>{if(PB.sel&&PB.sel.size)openReceipt([...PB.sel])});
+$("#sel-pdf").addEventListener("click",()=>{if(PB.sel&&PB.sel.size)pdfOfEntries(AS.LIVE.filter(e=>PB.sel.has(e.id)),"Selected entries")});
+// a new press clears the long-press flag, so only the lift right after a long press is skipped
+document.addEventListener("pointerdown",()=>{PB.lpAt=0},true);
+/** press and hold (like WhatsApp): runs fn after 500 ms unless the finger moves or lifts */
+export function longPress(el,fn){
+  el.addEventListener("contextmenu",ev=>ev.preventDefault());
+  el.addEventListener("pointerdown",ev=>{if(ev.button>0)return;const x0=ev.clientX,y0=ev.clientY;
+    const t=setTimeout(()=>{stop();fn()},500);
+    const mv=e=>{if(Math.abs(e.clientX-x0)>10||Math.abs(e.clientY-y0)>10)stop()};
+    function stop(){clearTimeout(t);el.removeEventListener("pointerup",stop);el.removeEventListener("pointercancel",stop);el.removeEventListener("pointerleave",stop);el.removeEventListener("pointermove",mv)}
+    el.addEventListener("pointerup",stop);el.addEventListener("pointercancel",stop);el.addEventListener("pointerleave",stop);el.addEventListener("pointermove",mv)});
+}
 $("#sel-del").addEventListener("click",async()=>{
   const es=PB.sel?AS.LIVE.filter(e=>PB.sel.has(e.id)):[];if(!es.length)return;
   if(!await ask(`Move ${plural(es.length,"entry","entries")} to trash?`,`${money(sums(es).t)} in total. You can restore them from Trash.`,{ok:"Move to trash",danger:true}))return;
