@@ -37,7 +37,7 @@ export function renderPeople(){
   $("#contacts").innerHTML=rows.length?rows.map(({c,es,inv,t})=>{
     const its=[...new Set(es.map(itemName).filter(Boolean))].slice(0,2).join(", ");
     const roles=[...new Set(inv.flatMap(e=>othersOf(e).filter(o=>o.contactId===c.id&&o.role).map(o=>o.role)))].join(", ");
-    const sub=es.length?`${its?its+" · ":""}${plural(es.length,"payment","payments")} · last ${fdate(es[0].ts)}`:inv.length?`${roles?roles+" · ":""}involved in ${plural(inv.length,"entry","entries")}`:(AS.VIEW==="all"?"No entries in this project":"No entries in this view");
+    const sub=es.length?`${its?its+" · ":""}${plural(es.length,"payment","payments")} · last ${fdate(es[0].ts)}`:inv.length?`${roles?roles+" · ":""}involved in ${plural(inv.length,"payment","payments")}`:(AS.VIEW==="all"?"No payments in this project":"No payments in this view");
     const due=projDeals().filter(d=>d.contactId===c.id&&!d.closed&&dealInView(d)),dueAmt=round2(due.reduce((a,d)=>a+dealBal(d),0));
     const sub2=due.length?`Balance ${balText(dueAmt)} · ${sub}`:sub,nd=projDeals().filter(d=>d.contactId===c.id&&dealInView(d)).length;
     return `<button class="crow${es.length||inv.length||due.length?"":" idle"}" data-pc="${esc(c.id)}"><span class="av" aria-hidden="true">${esc(initials(c.name))}</span>
@@ -88,7 +88,7 @@ export function openPerson(id){
     <button class="second" data-p="book">Show in passbook</button>
     ${ds.length?`<span class="lbl" style="margin-top:14px">Other payments <span style="font-size:12px">(not in any deal)</span></span>`:""}
     ${other.length?`<ul class="book" style="margin-top:${ds.length?0:10}px">${other.map(e=>rowHTML(e,null,null,false,{noVendor:true})).join("")}</ul>`:ds.length?'<p class="hint" style="margin:0">All payments are counted in a deal.</p>':""}`
-    :inv.length?"":`<p class="empty">No entries for ${esc(c.name)} ${AS.VIEW==="all"?"in this project":"in this view"} yet.</p>`}
+    :inv.length?"":`<p class="empty">No payments for ${esc(c.name)} ${AS.VIEW==="all"?"in this project":"in this view"} yet.</p>`}
     ${inv.length?`<span class="lbl">Also involved in</span><ul class="book">${inv.map(e=>rowHTML(e)).join("")}</ul>`:""}`;
     $("[data-p=edit]",s.body).addEventListener("click",()=>openContact(c));
     $("[data-p=pay]",s.body).addEventListener("click",()=>openPaySheet({contact:c}));
@@ -105,7 +105,7 @@ export function openContact(c){
   const s=openSheet(c?"Edit contact":"New contact",`
     <label class="lbl" for="ct-n">Name</label><input class="field" id="ct-n" autocomplete="off" placeholder="e.g. Sharma Cement Store" value="${esc(c?.name||"")}">
     <label class="lbl" for="ct-p">Mobile number</label><input class="field" id="ct-p" type="tel" inputmode="tel" autocomplete="off" placeholder="e.g. 98765 43210 (optional)" value="${esc(c?.phone||"")}">
-    ${c&&used?`<p class="hint">Renaming also updates the name on ${plural(used,"entry","entries")}.</p>`:""}
+    ${c&&used?`<p class="hint">Renaming also updates the name on ${plural(used,"payment","payments")}.</p>`:""}
     ${c?"":`<button type="button" class="second" id="ct-adddeal">+ Add a deal</button><div class="deal-inline" id="ct-deal" hidden><div class="phead"><span class="lbl" style="margin:10px 0 0">Deal with this person</span><button type="button" class="linkbtn" id="ct-nodeal">Remove</button></div>${dealFormHTML({type:"calc",fields:[]})}</div>`}
     <button class="primary" id="ct-save">${c?"Save contact":"Add contact"}</button>
     ${c&&!used?'<button class="danger" id="ct-del">Delete contact</button>':""}`);

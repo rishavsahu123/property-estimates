@@ -41,6 +41,35 @@ button{cursor:pointer}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px}
 .projbtn{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--rule);background:var(--card);border-radius:999px;padding:5px 12px 5px 14px;font-weight:600;font-size:15px;max-width:78%}
 .projbtn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.projbtn .pl{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1;min-width:0}
+.projbtn .pl small{font-size:10.5px;font-weight:500;color:var(--muted);letter-spacing:.02em}
+.itembtn{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:left;border:1.5px solid var(--rule);background:var(--field);border-radius:12px;padding:10px 12px;min-height:50px;font-size:16px;color:var(--muted)}
+.itembtn span{display:flex;align-items:baseline;gap:8px;min-width:0}
+.itembtn b{color:var(--ink);font-weight:600}
+.itembtn small{font-size:12.5px;color:var(--muted)}
+.itembtn svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2}
+.itembtn.on{border-color:var(--tape);background:var(--warn-bg);box-shadow:inset 0 0 0 1px var(--tape)}
+.itembtn:disabled{opacity:.6}
+.pk-g{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:14px 0 4px}
+.pk-i{display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--rule);background:none;padding:11px 4px;font-size:16px;color:var(--ink)}
+.pk-i small{font-size:12.5px;color:var(--muted)}
+.pk-i.on{background:var(--warn-bg);border-radius:8px}
+.pk-new{border:0;background:none;color:var(--online);font-weight:600;font-size:14px;padding:9px 4px}
+.chiplbl{align-self:center;font-size:12px;color:var(--muted);margin-left:4px}
+.rcopt{flex-wrap:wrap}
+.rch{display:block;width:100%;font-size:12.5px;color:var(--muted);margin:-2px 0 4px 30px;line-height:1.35}
+.minfo .mh{margin:0 0 8px;font-size:18px}
+.wstep{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;border-top:1px solid var(--rule);background:none;padding:10px 2px;font-size:15px;color:var(--ink)}
+.wstep .wn{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--tape);color:var(--tape-ink);font-weight:700;font-size:14px;flex:none}
+.wstep.ok{color:var(--muted);text-decoration:line-through}
+.wstep.ok .wn{background:var(--cash);color:var(--card)}
+.notice{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;background:var(--warn-bg);color:var(--warn-ink);border:1px solid var(--tape);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:14px}
+.viewseg{margin:-2px 0 12px;background:var(--card)}
+.viewseg button{padding:7px 2px;font-size:14px}
+.viewseg.on{border-color:var(--tape)}
+.viewseg.on button[aria-pressed="true"]{background:var(--tape);color:var(--tape-ink);font-weight:600}
+.toast.bad{background:var(--debit);color:var(--card);cursor:pointer}
+.toast.bad::after{content:"  ✕";opacity:.8}
 .projbtn svg{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2.2}
 .brand{font-size:12px;color:var(--muted)}
 
@@ -303,7 +332,8 @@ body.selmode .toast{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
 
 /* view switch + group dropdowns + group editor */
 .tleft{display:flex;align-items:center;gap:6px;min-width:0;flex:1}
-.tleft .projbtn{max-width:none;min-width:72px;flex:0 1 auto}
+.tleft .projbtn{max-width:100%;min-width:0;flex:0 1 auto}
+.viewsel{text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
 .viewsel{appearance:none;-webkit-appearance:none;flex:none;min-width:0;border:1.5px solid var(--rule);background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235D6B77' stroke-width='2.4'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center/13px;border-radius:999px;padding:5px 28px 5px 12px;font-weight:600;font-size:14px;max-width:132px}
 .viewsel.on{background-color:var(--warn-bg);border-color:var(--tape);color:var(--warn-ink)}
 .gsel{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}

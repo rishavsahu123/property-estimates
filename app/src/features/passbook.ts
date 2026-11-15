@@ -68,16 +68,16 @@ export function openFilters(){
       <label><small>To</small><input type="date" class="field" data-w="to"></label>
     </div>
     <span class="lbl">Items <span style="font-size:12px">(pick any number)</span></span>
-    ${itemGroups||'<p class="pmeta" style="margin:0">No entries yet.</p>'}
+    ${itemGroups||'<p class="pmeta" style="margin:0">No payments yet.</p>'}
     <span class="lbl">Paid by</span>
     <div class="seg"><button type="button" data-fm="all">Any</button><button type="button" data-fm="cash">Cash</button><button type="button" data-fm="online">Online</button></div>
     <span class="lbl">Shop or person</span>
-    ${people.length?`<select class="field" id="fp-sel" aria-label="Add a shop or person to the filter"><option value="">Pick a shop or person (${people.length})</option>${people.map(([k,n])=>{const c=pCount(k);return `<option value="${esc(k)}">${esc(n)}${c?` (${c})`:" (no entries)"}</option>`}).join("")}</select><div class="chips" id="fp-on" style="margin-top:8px"></div>`:'<p class="pmeta" style="margin:0">No names added to entries yet.</p>'}
+    ${people.length?`<select class="field" id="fp-sel" aria-label="Add a shop or person to the filter"><option value="">Pick a shop or person (${people.length})</option>${people.map(([k,n])=>{const c=pCount(k);return `<option value="${esc(k)}">${esc(n)}${c?` (${c})`:" (no payments)"}</option>`}).join("")}</select><div class="chips" id="fp-on" style="margin-top:8px"></div>`:'<p class="pmeta" style="margin:0">No names added to payments yet.</p>'}
     <span class="lbl">Slip photo or file</span>
     <div class="seg"><button type="button" data-fs="any">Any</button><button type="button" data-fs="yes">Attached</button><button type="button" data-fs="no">None</button></div>
     <span class="lbl">Amount ₹</span>
     <div class="row"><label><small>From</small><input class="field" inputmode="decimal" data-w="min" placeholder="0"></label><label><small>To</small><input class="field" inputmode="decimal" data-w="max" placeholder="Any"></label></div>
-    <button class="primary" data-w="apply">Show entries</button>
+    <button class="primary" data-w="apply">Show payments</button>
     <button class="more" data-w="clear">Clear all filters</button>`;
   const q=n=>$(`[data-w="${n}"]`,s.body);
   q("from").value=w.from;q("to").value=w.to;q("min").value=w.min;q("max").value=w.max;
@@ -91,7 +91,7 @@ export function openFilters(){
       $$("[data-fp]",on).forEach(b=>b.addEventListener("click",()=>{w.people=w.people.filter(x=>x!==b.dataset.fp);paint()}));
       $$("#fp-sel option",s.body).forEach(o=>{if(o.value)o.disabled=w.people.includes(o.value)})}
     $$("[data-fs]",s.body).forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.fs===w.slip)));
-    const n=applyF(AS.LIVE,w).length;q("apply").textContent=`Show ${plural(n,"entry","entries")}`;
+    const n=applyF(AS.LIVE,w).length;q("apply").textContent=`Show ${plural(n,"payment","payments")}`;
   }
   $$("[data-fr]",s.body).forEach(b=>b.addEventListener("click",()=>{w.range=b.dataset.fr;paint()}));
   $$("[data-fi]",s.body).forEach(b=>b.addEventListener("click",()=>{w.items=tog(w.items,b.dataset.fi);paint()}));
@@ -118,11 +118,11 @@ export function renderBook(){
   list.sort(cmp);
   const t=sums(list);
   $("#b-total").textContent=money(t.t);$("#b-words").textContent=list.length?"Spent: "+inWords(t.t):"";$("#b-cash").textContent=money(t.c);$("#b-online").textContent=money(t.o);
-  $("#b-count").textContent=list.length?`${plural(list.length,"entry","entries")}${s.startsWith("date")?". Running total shown under each amount.":""}`:"";
+  $("#b-count").textContent=list.length?`${plural(list.length,"payment","payments")}${s.startsWith("date")?". Running total shown under each amount.":""}`:"";
   const showBal=s.startsWith("date");
   $("#book").classList.toggle("selecting",!!PB.sel);
   $("#book").innerHTML=list.length?list.slice(0,PB.limit).map(e=>rowHTML(e,showBal?run[e.id]:null,PB.sel?PB.sel.has(e.id):null,true)).join("")
-    :`<li class="empty">${AS.LIVE.length?"No entries match these filters.":"No entries yet. Add your first payment from the Add tab."}</li>`;
+    :`<li class="empty">${AS.LIVE.length?"No payments match these filters.":"No payments yet. Add your first one from the Add tab."}</li>`;
   $("#bookmore").hidden=list.length<=PB.limit;
   PB.list=list;
   $$(".entry",$("#book")).forEach(b=>{longPress(b,()=>{if(PB.sel)return;PB.sel=new Set([b.dataset.id]);PB.lpAt=Date.now();try{navigator.vibrate&&navigator.vibrate(15)}catch{}renderBook()});
@@ -142,7 +142,7 @@ export function paintSel(){
   $("#selbar").hidden=!on;$("#selbtn").textContent=on?"Done":"Select";$("#selall").hidden=!on;
   if(!on)return;
   const es=AS.LIVE.filter(e=>PB.sel.has(e.id));
-  $("#sel-n").textContent=es.length?`${es.length} selected`:"Tap entries to select";
+  $("#sel-n").textContent=es.length?`${es.length} selected`:"Tap payments to select";
   $("#sel-t").textContent=money(sums(es).t);$("#sel-share").disabled=!es.length;$("#sel-del").disabled=!es.length;$("#sel-pdf").disabled=!es.length;
 }
 $("#selbtn").addEventListener("click",()=>{PB.sel=PB.sel?null:new Set();renderBook()});
@@ -150,7 +150,7 @@ $("#selall").addEventListener("click",()=>{if(!PB.sel)return;const ids=(PB.list|
   const all=ids.every(id=>PB.sel.has(id));ids.forEach(id=>all?PB.sel.delete(id):PB.sel.add(id));renderBook()});
 $("#sel-x").addEventListener("click",()=>{PB.sel=null;renderBook()});
 $("#sel-share").addEventListener("click",()=>{if(PB.sel&&PB.sel.size)openReceipt([...PB.sel])});
-$("#sel-pdf").addEventListener("click",()=>{if(PB.sel&&PB.sel.size)pdfOfEntries(AS.LIVE.filter(e=>PB.sel.has(e.id)),"Selected entries")});
+$("#sel-pdf").addEventListener("click",()=>{if(PB.sel&&PB.sel.size)pdfOfEntries(AS.LIVE.filter(e=>PB.sel.has(e.id)),"Selected payments")});
 // a new press clears the long-press flag, so only the lift right after a long press is skipped
 document.addEventListener("pointerdown",()=>{PB.lpAt=0},true);
 /** press and hold (like WhatsApp): runs fn after 500 ms unless the finger moves or lifts */
@@ -164,8 +164,8 @@ export function longPress(el,fn){
 }
 $("#sel-del").addEventListener("click",async()=>{
   const es=PB.sel?AS.LIVE.filter(e=>PB.sel.has(e.id)):[];if(!es.length)return;
-  if(!await ask(`Move ${plural(es.length,"entry","entries")} to trash?`,`${money(sums(es).t)} in total. You can restore them from Trash.`,{ok:"Move to trash",danger:true}))return;
+  if(!await ask(`Move ${plural(es.length,"payment","payments")} to trash?`,`${money(sums(es).t)} in total. You can restore them from Trash.`,{ok:"Move to trash",danger:true}))return;
   try{for(const e of es)await trashIt(e);PB.sel=null;renderBook();
-    toast(`${plural(es.length,"entry","entries")} moved to trash`,{label:"Undo",fn:async()=>{for(const e of es){const x=D.entries.find(y=>y.id===e.id);if(x&&x.deletedAt)await restoreIt(x)}toast("Entries restored")}})}
+    toast(`${plural(es.length,"payment","payments")} moved to trash`,{label:"Undo",fn:async()=>{for(const e of es){const x=D.entries.find(y=>y.id===e.id);if(x&&x.deletedAt)await restoreIt(x)}toast("Payments restored")}})}
   catch{toast("Couldn’t move to trash. Try again.")}
 });

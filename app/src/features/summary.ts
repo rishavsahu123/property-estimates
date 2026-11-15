@@ -14,18 +14,18 @@ export function renderSummary(){
   $("#costsplit").innerHTML=AS.VIEW==="all"?`
     <div class="trow"><span>Construction</span><span class="num">${money(k.construction)}</span></div>
     <div class="trow"><span>Documents</span><span class="num">${money(k.documents)}</span></div>
-    ${k.unknown?`<div class="trow"><span>Not sorted yet<br><small class="pmeta">groups marked Unknown, or entries without an item</small></span><span class="num">${money(k.unknown)}</span></div>`:""}
+    ${k.unknown?`<div class="trow"><span>Not sorted yet<br><small class="pmeta">groups marked Unknown, or payments without an item</small></span><span class="num">${money(k.unknown)}</span></div>`:""}
     <div class="trow total"><span>Total</span><span class="num">${money(t.t)}</span></div>`
-    :`<div class="trow total" style="border-top:0"><span>${KINDS[AS.VIEW]} total<br><small class="pmeta">${plural(es.length,"entry","entries")}</small></span><span class="num">${money(t.t)}</span></div>`;
+    :`<div class="trow total" style="border-top:0"><span>${KINDS[AS.VIEW]} total<br><small class="pmeta">${plural(es.length,"payment","payments")}</small></span><span class="num">${money(t.t)}</span></div>`;
   $("#mbar").innerHTML=t.t?`<i style="width:${t.c/t.t*100}%;background:var(--cash)"></i><i style="width:${t.o/t.t*100}%;background:var(--online)"></i>`:"";
   $("#mlegend").innerHTML=`<span style="color:var(--cash)">Cash ${money(t.c)}</span><span style="color:var(--online)">Online ${money(t.o)}</span>`;
   const groups=byItem(es);let html="";
   [...D.groups.map(g=>g.k),"none"].forEach(cat=>{
     const gs=groups.filter(g=>g.cat===cat);if(!gs.length)return;
     html+=`<div class="cathead"><span>${esc(gName(cat))}</span><span>${money(gs.reduce((s,g)=>s+g.amt,0))}</span></div>`;
-    html+=gs.map(g=>`<div class="trow"><span>${esc(g.name)}</span><span class="num">${money(g.amt)}</span><span class="s">${plural(g.n,"entry","entries")}${g.qtext?". "+esc(g.qtext):""}</span></div>`).join("");
+    html+=gs.map(g=>`<div class="trow"><span>${esc(g.name)}</span><span class="num">${money(g.amt)}</span><span class="s">${plural(g.n,"payment","payments")}${g.qtext?". "+esc(g.qtext):""}</span></div>`).join("");
   });
-  $("#byitem").innerHTML=html||'<p class="empty">Totals appear here once you add entries.</p>';
+  $("#byitem").innerHTML=html||'<p class="empty">Totals appear here once you add payments.</p>';
   renderGroupBar(es,t.t);renderMonthly(es);renderDeals(t.t);
 }
 export const paintTheme=()=>$$("#theme button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.theme===lget("pe-theme","auto"))));
@@ -83,7 +83,7 @@ export function renderMonthly(es){
   const VGm=chartGroups(es);
   const all=monthRows(es),ms=all.slice(-12),wrap=$("#mchart");
   $("#mtoggle").hidden=!ms.length;
-  if(!ms.length){wrap.innerHTML='<p class="empty">The chart appears once you add entries.</p>';$("#mtable").innerHTML="";$("#mlg").innerHTML="";$("#mnote").textContent="";return}
+  if(!ms.length){wrap.innerHTML='<p class="empty">The chart appears once you add payments.</p>';$("#mtable").innerHTML="";$("#mlg").innerHTML="";$("#mnote").textContent="";return}
   const W=360,H=214,L=44,R=6,T=16,B=34,pw=W-L-R,ph=H-T-B,max=niceMax(Math.max(...ms.map(m=>m.t)));
   const band=pw/ms.length,bw=Math.max(6,Math.min(28,band*.62)),peak=ms.reduce((a,m,i)=>m.t>ms[a].t?i:a,0);
   let svg=`<svg class="mchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Spending by month, ${ms.map(m=>`${MON[m.m]} ${m.y}: ${money(m.t)}`).join(", ")}">`;

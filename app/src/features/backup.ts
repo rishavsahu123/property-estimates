@@ -31,8 +31,8 @@ $("#restorefile").addEventListener("change",async ev=>{
   const newProjects=(Array.isArray(d.projects)?d.projects:[]).filter(p=>p&&p.id&&p.name&&!D.projects.some(x=>x.id===p.id));
   const have=new Map(D.entries.map(e=>[e.id,e]));
   const incoming=d.entries.filter(e=>e&&e.id&&(!have.has(e.id)||(e.updatedAt||0)>(have.get(e.id).updatedAt||0)));
-  const msg=`Restore ${plural(incoming.length,"entry","entries")}${newProjects.length?` and ${plural(newProjects.length,"project","projects")}`:""} from this backup?`;
-  if(!await ask(msg,"Entries already on this phone are kept.",{ok:"Restore"}))return;
+  const msg=`Restore ${plural(incoming.length,"payment","payments")}${newProjects.length?` and ${plural(newProjects.length,"project","projects")}`:""} from this backup?`;
+  if(!await ask(msg,"Payments already on this phone are kept.",{ok:"Restore"}))return;
   try{
     const freshPhone=!D.entries.length;
     if(freshPhone&&newProjects.length){
@@ -66,6 +66,6 @@ $("#restorefile").addEventListener("change",async ev=>{
     for(const e of incoming)await dbPut("entries",e);
     D.entries=await dbAll("entries");D.projects.sort((a,b)=>a.createdAt-b.createdAt);
     if(!D.projects.some(p=>p.id===D.pid))D.pid=D.projects[0].id;
-    emit();resetAdd();toast(`Restored ${plural(incoming.length,"entry","entries")}${newProjects.length&&!freshPhone?`. Switch projects from the name at the top.`:""}`);
+    emit();resetAdd();toast(`Restored ${plural(incoming.length,"payment","payments")}${newProjects.length&&!freshPhone?`. Switch projects from the name at the top.`:""}`);
   }catch(err){console.error(err);toast("Restore stopped partway. Try again.")}
 });

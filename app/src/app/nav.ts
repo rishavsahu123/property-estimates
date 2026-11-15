@@ -30,7 +30,7 @@ export function renderAll(){
   if(!$("#v-people").hidden)renderPeople();
   if(!$("#v-sum").hidden)renderSummary();
   if(!$("#v-trash").hidden)renderTrash();
-  $("#trashlink").textContent=AS.TRASH.length?`Trash (${AS.TRASH.length})`:"Trash";
+  $("#trashlink").textContent=AS.TRASH.length?`Trash (${AS.TRASH.length})`:"Trash";$("#trashlink").hidden=!AS.TRASH.length;
 }
 $("#sort").addEventListener("change",renderBook);
 $("#openfilters").addEventListener("click",openFilters);

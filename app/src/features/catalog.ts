@@ -18,9 +18,9 @@ export function openItemForm(item,{cat,onSaved}={}){
     <label class="lbl" for="if-u">Units <span style="font-size:12px">(optional, comma separated)</span></label><input class="field" id="if-u" autocomplete="off" placeholder="e.g. kg, bundle" value="${esc((it.units||[]).join(", "))}">
     <p class="hint">Add units if you want quantity × rate on this item. Leave empty for payments.</p>
     <label class="lbl" for="if-s">Short note under the name <span style="font-size:12px">(optional)</span></label><input class="field" id="if-s" autocomplete="off" placeholder="e.g. 50 kg bag" value="${esc(it.sub||"")}">
-    ${item?`<label class="check"><input type="checkbox" id="if-h" ${it.hidden?"checked":""}>Hide from the Add screen</label><p class="hint">Hidden items keep their old entries and totals.</p>`:""}
+    ${item?`<label class="check"><input type="checkbox" id="if-h" ${it.hidden?"checked":""}>Hide from the Add screen</label><p class="hint">Hidden items keep their old payments and totals.</p>`:""}
     <button class="primary" id="if-save">${item?"Save item":"Add item"}</button>
-    ${item?(used?`<p class="hint">Used in ${plural(used,"entry","entries")}, so it can’t be deleted. Hide it instead.</p>`:'<button class="danger" id="if-del">Delete item</button>'):""}`);
+    ${item?(used?`<p class="hint">Used in ${plural(used,"payment","payments")}, so it can’t be deleted. Hide it instead.</p>`:'<button class="danger" id="if-del">Delete item</button>'):""}`);
   if(!item)setTimeout(()=>$("#if-n",s.body).focus(),50);
   $("#if-save",s.body).addEventListener("click",async()=>{
     const n=$("#if-n",s.body).value.trim();if(!n){toast("Type a name for the item");return}
@@ -63,11 +63,35 @@ export function openGroupForm(g,{onSaved}={}){
   const del=$("#gf-del",s.body);
   if(del)del.addEventListener("click",async()=>{
     const its=D.items.filter(i=>i.cat===g.k),u=usage(),n=its.reduce((a,i)=>a+(u[i.k]||0),0);
-    if(n){msg(`Items in this group are used in ${plural(n,"entry","entries")}. Move those items to another group first (tap an item and change its group), then delete the group.`);return}
+    if(n){msg(`Items in this group are used in ${plural(n,"payment","payments")}. Move those items to another group first (tap an item and change its group), then delete the group.`);return}
     if(!await ask(`Delete the group “${g.n}”${its.length?` and its ${plural(its.length,"item","items")}`:""}?`,"",{ok:"Delete",danger:true}))return;
     D.items=D.items.filter(i=>i.cat!==g.k);D.groups=D.groups.filter(x=>x.k!==g.k);
     await saveCatalog();s.close();emit();toast("Group deleted");onSaved&&onSaved(null);
   });
+}
+/** "What was it for?": search, recent items, every group's items in one list, and + New item. onPick(key|null) */
+export function openItemPicker(cur,onPick){
+  const s=openSheet("What was it for?",`
+    <input class="field" type="search" id="pk-q" placeholder="Search, e.g. cement" autocomplete="off" aria-label="Search items">
+    <div id="pk-list" style="margin-top:6px"></div>
+    <div class="pact" style="margin-top:12px">${cur?'<button type="button" class="linkbtn" id="pk-none">No item</button>':""}<button type="button" class="linkbtn" id="pk-edit">Edit groups</button></div>`);
+  const q=()=>$("#pk-q",s.body).value.trim().toLowerCase();
+  const pick=k=>{s.close();onPick(k)};
+  const paint=()=>{
+    const t=q(),gs=[...viewGroups()],ci=AS.IM.get(cur);if(ci&&!gs.some(g=>g.k===ci.cat)&&AS.GM.get(ci.cat))gs.push(AS.GM.get(ci.cat));
+    const html=gs.map(g=>{const its=D.items.filter(i=>i.cat===g.k&&(!i.hidden||i.k===cur)&&(!t||i.n.toLowerCase().includes(t)||String(i.sub||"").toLowerCase().includes(t)));
+      if(t&&!its.length)return"";
+      return `<div class="pk-g">${esc(g.n)}${g.kind?"":' <span class="tag unk">Unknown</span>'}</div>`+its.map(i=>`<button type="button" class="pk-i${i.k===cur?" on":""}" data-pick="${esc(i.k)}"><span>${esc(i.n)}</span><small>${esc(i.sub||"")}</small></button>`).join("")
+        +`<button type="button" class="pk-new" data-newitem="${esc(g.k)}">+ New item in ${esc(g.n)}</button>`}).join("");
+    $("#pk-list",s.body).innerHTML=html||(t?`<p class="hint">No item called “${esc(t)}”.</p><button type="button" class="second" data-newitem="${esc((gs[0]||D.groups[0]||{}).k||"")}" data-name="${esc($("#pk-q",s.body).value.trim())}">+ Add “${esc($("#pk-q",s.body).value.trim())}” as a new item</button>`:'<p class="hint">No groups in this view. Tap Edit groups to add one.</p>');
+    $$("[data-pick]",s.body).forEach(b=>b.addEventListener("click",()=>pick(b.dataset.pick)));
+    $$("[data-newitem]",s.body).forEach(b=>b.addEventListener("click",()=>{const nm=b.dataset.name||"";
+      openItemForm(null,{cat:b.dataset.newitem,onSaved:it=>{if(it)pick(it.k)}});if(nm){const f=$("#if-n");if(f)f.value=nm}}));
+  };
+  $("#pk-q",s.body).addEventListener("input",paint);
+  const none=$("#pk-none",s.body);if(none)none.addEventListener("click",()=>pick(null));
+  $("#pk-edit",s.body).addEventListener("click",()=>openGroups(()=>{}));
+  s.refresh=paint;paint();
 }
 export function openGroups(onChange){
   const s=openSheet("Edit groups","");s.refresh=()=>paint();
@@ -77,7 +101,7 @@ export function openGroups(onChange){
     s.body.innerHTML=`<p class="hint" style="margin-top:0">Each group belongs to Construction or Documents. The switch next to the project name uses this to filter the app. Groups marked Unknown show only under All.</p>`
       +D.groups.map(g=>{const its=D.items.filter(i=>i.cat===g.k);
         return `<div class="grp"><div class="ghead"><span><b>${esc(g.n)}</b> ${kindTag(g.kind)}</span><button class="linkbtn" data-eg="${esc(g.k)}">Edit group</button></div>`
-          +(its.length?its.map(i=>`<button class="irow" data-k="${esc(i.k)}"><span><b>${esc(i.n)}</b>${i.hidden?' <span class="tag muted">Hidden</span>':""}<small>${esc([(i.units||[]).length?"Units: "+i.units.join(", "):"No units",u[i.k]?plural(u[i.k],"entry","entries"):""].filter(Boolean).join(" · "))}</small></span><span class="go">Edit</span></button>`).join(""):'<p class="pmeta" style="margin:8px 0">No items yet.</p>')
+          +(its.length?its.map(i=>`<button class="irow" data-k="${esc(i.k)}"><span><b>${esc(i.n)}</b>${i.hidden?' <span class="tag muted">Hidden</span>':""}<small>${esc([(i.units||[]).length?"Units: "+i.units.join(", "):"No units",u[i.k]?plural(u[i.k],"payment","payments"):""].filter(Boolean).join(" · "))}</small></span><span class="go">Edit</span></button>`).join(""):'<p class="pmeta" style="margin:8px 0">No items yet.</p>')
           +`<button class="linkbtn" data-ni="${esc(g.k)}" style="margin:4px 0">+ Add item</button></div>`}).join("")
       +'<button class="primary" id="gr-new">+ Add new group</button>';
     $$("[data-k]",s.body).forEach(b=>b.addEventListener("click",()=>openItemForm(AS.IM.get(b.dataset.k),{onSaved:again})));

@@ -93,15 +93,19 @@ Status: **approved 2 Nov 2026.** Phase 0 done. Phase 1 in progress (milestone 1 
 
 ## Phase 3 — Subscription (Razorpay now, Play Billing later)
 
+**Model (decided 15 Nov 2026):** Free / Basic / Royal / Custom add-ons. The full table is in `roadmap.md` → Business model.
+
 **What you get:**
 
-- New users get **7 days free**. No card is needed to try. Then **₹49/month autopay** through UPI AutoPay or card, via Razorpay.
-- While paid, the app works **fully offline** until the paid date plus 3 days of grace.
-- When it expires, even offline, the app becomes **read-only**:
-  - Still works: view, search, receipts, PDF/Excel, backup, Drive backup.
-  - Locked: add, edit, delete. A "Renew" button appears.
-- Data is never locked or deleted.
-- Cancel anytime from Settings. The app stays paid until the end of the month you paid for.
+- New users get **30 days of Royal free**. No card is needed.
+- **Free:** add payments (edit or delete within 10 minutes of saving), passbook, search, summary, local backup and restore.
+- **Basic (₹29 a month):** Free, plus edit and delete, receipts, PDF and Excel, attachments.
+- **Royal (₹59 a month or ₹499 a year):** everything, including deals and salary, Drive sync, multiple projects and future features.
+- **Custom:** add-ons one by one, costlier in total than Royal.
+- Every feature is visible. Locked ones show a 🔒 that opens Plans. There are no pop-ups or notifications about plans.
+- Data is never locked or deleted. Local backup and restore stay free.
+- Paid plans work **fully offline** until the paid date plus 3 days of grace.
+- Cancel anytime; the plan stays until the end of the paid period.
 
 **How it works:**
 
@@ -110,12 +114,15 @@ Phone app ──sign in──▶ Google ──ID token──▶ Our small server
                                                 │  creates Razorpay subscription
 Phone app ◀──Razorpay checkout (UPI/card)───────┘
 Razorpay ──webhook "charged"──▶ Server ──▶ signs a licence:
-           { email, plan, paidUntil, issuedAt }  (digital signature)
+           { email, plan, features[], paidUntil, issuedAt }  (digital signature)
 Phone app stores the licence and checks the signature OFFLINE with a built-in public key.
 ```
 
-- **Trial:** tied to the Google account (stored on the server), so reinstalling doesn't give another free trial.
-- **Offline rule:** `canWrite = now <= paidUntil + 3 days`. The licence can't be edited, because the signature check fails.
+- **Trial:**
+  - Tied to the Google account (stored on the server), so reinstalling doesn't give another free trial.
+  - The trial start date also goes inside backups, so restoring old data never restarts the trial.
+  - In the Android app, a hash of `ANDROID_ID` is stored with the trial, so a second Gmail on the same phone doesn't get another trial.
+- **Offline rule:** `can(feature) = licence.features includes feature && now <= paidUntil + 3 days` (the trial works the same way, with all features). The licence can't be edited, because the signature check fails.
 - **Clock trick guard:** the app remembers the latest time it has ever seen. Setting the phone date backwards doesn't extend access.
 - **Renewal:** whenever the app is online, it quietly fetches a fresh licence. Each month's autopay extends `paidUntil`.
 - **Server endpoints:**
@@ -124,12 +131,12 @@ Phone app stores the licence and checks the signature OFFLINE with a built-in pu
   - `/webhook` receives Razorpay events.
   - `/license` returns the latest licence.
   - `/cancel` cancels the subscription.
-- All gating goes through one function: `entitlement.can('write')`.
+- All gating goes through one function: `entitlement.can(feature)`, which covers trial, premium, grace and free.
 - **Legal pages** (needed by Razorpay and Google): Privacy policy, Terms, Refund/cancellation, Contact. I draft them; you review them.
 
 **Your part:**
 
-1. **Razorpay account plus KYC** (PAN, bank account; usually 1–3 days). Turn on Subscriptions, create a plan of ₹49/month with a 7-day trial, and give me the **test** key ID. The secret goes only into Cloudflare, never into the app.
+1. **Razorpay account plus KYC** (PAN, bank account; usually 1–3 days). Turn on Subscriptions, create plans for Basic ₹29 a month, Royal ₹59 a month and ₹499 a year, and one plan for each add-on (the 30-day trial is handled by our server), and give me the **test** key ID. The secret goes only into Cloudflare, never into the app.
 2. **Cloudflare account** (free). I give you the Worker code and a one-page setup guide. You paste the secrets into Cloudflare settings.
 3. Test with Razorpay **test mode** first, then switch to live keys.
 
@@ -166,10 +173,10 @@ You can start the Razorpay KYC and Google Cloud setup now, in parallel with Phas
 ## Decisions taken
 
 - Payments: Razorpay now, Play Billing later.
-- When unpaid: read-only.
+- When not paying: on Free, editing or deleting is allowed only within 10 minutes of saving. All features stay visible with a 🔒. No nagging (15 Nov 2026).
 - Identity: Google sign-in (optional until the trial ends).
 - Drive backup: on by default after sign-in, can be disabled, frequency Daily/Weekly/Monthly/Only when I tap/Off, plus Wi-Fi only.
-- Price: 7-day free trial, then ₹49/month auto-renew.
+- Price: 30 days of Royal free, then Free / Basic ₹29 / Royal ₹59 (₹499 a year) / Custom add-ons (decided 15 Nov 2026).
 
 - Drive folder: visible "Property Estimates backups" folder (approved).
 - Grace after a missed payment: 3 days (approved).

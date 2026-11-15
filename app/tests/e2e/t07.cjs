@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
+const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups } = require('./env.cjs');
 const URL = 'http://localhost:8090/';
 (async () => {
   const browser = await chromium.launch();
@@ -9,10 +9,10 @@ const URL = 'http://localhost:8090/';
   await page.goto(URL + '?t=' + Date.now()); await page.waitForSelector('#boot', { state: 'detached' });
   await page.fill('#addform [data-f="amount"]', '1250300'); r.typed = await page.textContent('#addform [data-f="words"]');
   await page.screenshot({ path: 'w1-form.png', clip: { x: 0, y: 200, width: 390, height: 260 } });
-  await page.fill('#addform [data-f="vendor"]', 'Ramesh Thekedar'); await page.selectOption('#addform select[data-g="people"]', 'thekedar');
+  await page.fill('#addform [data-f="vendor"]', 'Ramesh Thekedar'); await pickItem(page,'thekedar');
   await page.click('#addform [data-f="save"]'); await page.waitForTimeout(300);
   r.cleared = await page.textContent('#addform [data-f="words"]');
-  await page.selectOption('#addform select[data-g="material"]', 'cement'); await page.fill('#addform [data-f="qty"]', '50'); await page.fill('#addform [data-f="rate"]', '290');
+  await pickItem(page,'cement'); await page.fill('#addform [data-f="qty"]', '50'); await page.fill('#addform [data-f="rate"]', '290');
   r.auto = await page.textContent('#addform [data-f="words"]');
   await page.click('#addform [data-f="save"]'); await page.waitForTimeout(300);
   r.hero = await page.textContent('#h-words');

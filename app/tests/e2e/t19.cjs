@@ -5,7 +5,7 @@ const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, serviceWorkers: 'block', colorScheme: 'dark' });
   const page = await ctx.newPage(); page.on('pageerror', e => errors.push(e.message)); page.on('dialog', d => d.accept());
   await page.goto('http://localhost:8090/?t=' + Date.now()); await page.waitForSelector('#boot', { state: 'detached' });
-  await page.selectOption('#viewsel', 'construction');
+  await page.click('#viewseg [data-v=\"construction\"]');
   await page.click('nav [data-go="people"]'); await page.click('#addcontact'); await page.fill('#ct-n', 'test'); await page.click('#ct-save'); await page.waitForTimeout(300);
   await page.click('#contacts .crow >> nth=0'); await page.click('.sheet [data-p="adddeal"]');
   await page.fill('#dl-t', 'Grey Box Construction');

@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
+const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups } = require('./env.cjs');
 (async () => {
   const browser = await chromium.launch(); const r = {}, errors = [];
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, serviceWorkers: 'block', colorScheme: 'dark' });
@@ -7,7 +7,7 @@ const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
   page.on('console', m => { if (m.type() === 'error' && !/ERR_TUNNEL/.test(m.text())) errors.push(m.text()) });
   await page.goto('http://localhost:8090/?t=' + Date.now()); await page.waitForSelector('#boot', { state: 'detached' });
   const F = n => `#addform [data-f="${n}"]`, sheets = () => page.$$eval('.sheet h2', h => h.map(x => x.textContent));
-  await page.fill(F('amount'), '1000'); await page.selectOption('#addform select[data-g="people"]', 'thekedar'); await page.fill(F('vendor'), 'Ramesh'); await page.click(F('save')); await page.waitForTimeout(300);
+  await page.fill(F('amount'), '1000'); await pickItem(page,'thekedar'); await page.fill(F('vendor'), 'Ramesh'); await page.click(F('save')); await page.waitForTimeout(300);
   await page.click('nav [data-go="people"]'); await page.click('#contacts .crow >> nth=0');
   await page.click('.sheet [data-p="adddeal"]'); await page.fill('#dl-t', 'Grey box');
   await page.fill('#dl-fields .frow >> nth=0 >> [data-fl]', 'Rate'); await page.fill('#dl-fields .frow >> nth=0 >> [data-fv]', '285');

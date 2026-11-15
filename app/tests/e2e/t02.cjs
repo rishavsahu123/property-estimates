@@ -29,7 +29,7 @@ const URL = 'http://localhost:8090/';
   await page.setInputFiles('#restorefile', OUT + '/old-backup.json');
   await page.waitForTimeout(800);
   r.afterOldRestoreTotal = await page.textContent('#h-total');
-  r.tankerTile = await page.$$eval('#addform option', o => o.some(x => x.textContent === 'Tanker paani'));
+  r.tankerTile = await page.evaluate(() => window.__pe.D.items.some(i => i.n === 'Tanker paani'));
   // sort by person, empties last
   await page.click('nav [data-go="book"]');
   await page.selectOption('#sort', 'person');

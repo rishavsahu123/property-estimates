@@ -2,7 +2,7 @@
 // The entry form used for add, edit and pop-up payments.
 import { esc, money, numfmt, fdate, localDay, pnum, round2, perUnit, cleanPhone, newId, plural, inWords } from "../lib/format";
 import { isMonthly, agLabel, dealAgreed, termsText, balText } from "../lib/deals";
-import { openGroups, openItemForm } from "./catalog";
+import { openGroups, openItemForm, openItemPicker } from "./catalog";
 import { giveFile } from "./export";
 import { delSlip, DOC_ACCEPT, docChip, docOk, filesOf, MAX_DOC, openDoc, slipURL, storeDoc, storeSlip, viewSlip } from "./files";
 import { personKey } from "./passbook";
@@ -31,7 +31,8 @@ export function makeForm(root,{entry,onDone,onCancel}){
     </div>
     <div class="hint" data-f="splitOut"></div>
     <div class="pickhead"><span class="lbl">What was it for? <span style="font-size:12px">(optional)</span></span><span><button type="button" class="linkbtn" data-f="clearItem" hidden>Clear</button><button type="button" class="linkbtn" data-f="editItems">Edit groups</button></span></div>
-    <div class="gsel" data-f="picker"></div>
+    <button type="button" class="itembtn" data-f="itemBtn" aria-haspopup="dialog"><span data-f="itemTxt">Choose item</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="chips" data-f="itemRecent" style="margin-top:8px"></div>
     <div class="row3" data-f="qtyWrap" hidden style="margin-top:10px">
       <label><small>Quantity</small><input class="field" data-f="qty" inputmode="decimal" placeholder="e.g. 50"></label>
       <label><small>Unit</small><select class="field" data-f="unit"></select></label>
@@ -45,7 +46,7 @@ export function makeForm(root,{entry,onDone,onCancel}){
         <input class="field" data-f="vendor" placeholder="Name, e.g. Sharma Cement" autocomplete="off" aria-label="Shop or person">
         <input class="field" data-f="phone" type="tel" inputmode="tel" placeholder="Mobile (optional)" autocomplete="off" aria-label="Mobile number">
       </div>
-      <div data-f="dealWrap" hidden><span class="lbl" style="margin-top:4px">Count this payment against</span><div class="chips" data-f="deal" role="group" aria-label="Count this payment against"></div><div class="hint" data-f="dealHint"></div></div>
+      <div data-f="dealWrap" hidden><span class="lbl" style="margin-top:4px">Part of deal</span><div class="chips" data-f="deal" role="group" aria-label="Part of deal"></div><div class="hint" data-f="dealHint"></div></div>
       <div class="stack" data-f="others"></div>
       <button type="button" class="linkbtn" data-f="addOther" style="justify-self:start">+ Add another person</button>
     </div>
@@ -58,23 +59,21 @@ export function makeForm(root,{entry,onDone,onCancel}){
     <div class="docs" data-f="doclist"></div>
     <div class="savebar${onCancel?" two":""}">
       ${onCancel?'<button type="button" class="second" data-f="cancel">Cancel</button>':""}
-      <button type="button" class="primary" data-f="save">${editing?"Save changes":"Save entry"}</button>
+      <button type="button" class="primary" data-f="save">${editing?"Save changes":"Save payment"}</button>
     </div>`;
   const f=n=>root.querySelector(`[data-f="${n}"]`);
   const amount=f("amount"),qty=f("qty"),rate=f("rate"),unit=f("unit"),cash=f("cash"),online=f("online"),vendor=f("vendor"),phone=f("phone");
 
+  // the button shows the picked item; chips offer the items used most recently (one tap)
   function paintPicker(){
     if(st.item&&!AS.IM.has(st.item))st.item=null;
-    const gs=viewGroups(),cur=AS.IM.get(st.item);
-    if(cur&&!gs.some(g=>g.k===cur.cat)){const g=AS.GM.get(cur.cat);if(g)gs.push(g)}
-    f("picker").innerHTML=gs.length?gs.map(g=>{
-      const its=D.items.filter(i=>i.cat===g.k&&(!i.hidden||i.k===st.item)),on=its.some(i=>i.k===st.item);
-      return `<label class="gs${on?" on":""}">${on?`<small>${esc(g.n)}</small>`:""}<select data-g="${esc(g.k)}" aria-label="${esc(g.n)}"><option value="">${esc(g.n)}</option>${its.map(i=>`<option value="${esc(i.k)}"${i.k===st.item?" selected":""}>${esc(i.n)}</option>`).join("")}<option value="__new">+ New item</option></select></label>`}).join("")
-      :'<p class="hint" style="margin:0">No groups in this view. Tap Edit groups to add one.</p>';
-    $$("select[data-g]",f("picker")).forEach(sel=>sel.addEventListener("change",()=>{
-      const v=sel.value,g=sel.dataset.g;
-      if(v==="__new"){sel.value=AS.IM.get(st.item)?.cat===g?st.item:"";openItemForm(null,{cat:g,onSaved:it=>{if(it)st.item=it.k;paintItem()}});return}
-      st.item=v||null;paintItem()}));
+    const cur=AS.IM.get(st.item),btn=f("itemBtn"),gs=viewGroups();
+    btn.classList.toggle("on",!!cur);btn.disabled=!gs.length&&!cur;
+    f("itemTxt").innerHTML=cur?`<b>${esc(cur.n)}</b><small>${esc(AS.GM.get(cur.cat)?.n||"")}</small>`:gs.length?"Choose item":"No groups in this view";
+    const seen=new Set(),rec=[];for(const e of AS.LIVE){if(e.item&&AS.IM.has(e.item)&&!AS.IM.get(e.item).hidden&&!seen.has(e.item)){seen.add(e.item);rec.push(AS.IM.get(e.item))}if(rec.length>=4)break}
+    const chips=rec.filter(i=>i.k!==st.item).slice(0,3);
+    f("itemRecent").innerHTML=chips.map(i=>`<button type="button" class="chip sm" data-ri="${esc(i.k)}">${esc(i.n)}</button>`).join("");f("itemRecent").hidden=!chips.length;
+    $$("[data-ri]",f("itemRecent")).forEach(b=>b.addEventListener("click",()=>{st.item=b.dataset.ri;paintItem()}));
   }
   function paintItem(){
     paintPicker();
@@ -90,13 +89,11 @@ export function makeForm(root,{entry,onDone,onCancel}){
     const recent=src=>{const last=src.filter(e=>AS.CM.has(e.contactId)).slice(0,10),n=new Map();
       last.forEach((e,i)=>{const o=n.get(e.contactId)||{c:AS.CM.get(e.contactId),k:0,first:i};o.k++;n.set(e.contactId,o)});
       return [...n.values()].sort((a,b)=>b.k-a.k||a.first-b.first).map(o=>o.c)};
-    if(q){const rank=new Map(recent(AS.LIVE).map((c,i)=>[c.id,i]));
-      list=D.contacts.filter(c=>c.name.toLowerCase().includes(q)&&c.name.toLowerCase()!==q)
-        .sort((a,b)=>(rank.has(a.id)?rank.get(a.id):99)-(rank.has(b.id)?rank.get(b.id):99)||a.name.localeCompare(b.name))}
-    else{const byItem=st.item?recent(AS.LIVE.filter(e=>e.item===st.item)):[];list=byItem.length?byItem:recent(AS.LIVE)}
-    list=list.slice(0,3);
-    box.innerHTML=list.map(c=>`<button type="button" class="chip" data-c="${esc(c.id)}">${esc(c.name)}</button>`).join("");
-    box.hidden=!list.length;vendor.placeholder=list.length&&!q?"Name, or tap one above":"Name, e.g. Sharma Cement";
+    const byItem=st.item?recent(AS.LIVE.filter(e=>e.item===st.item)):[];list=(byItem.length?byItem:recent(AS.LIVE)).slice(0,3);
+    const matches=q?D.contacts.filter(c=>c.name.toLowerCase().includes(q)&&c.name.toLowerCase()!==q&&!list.includes(c)).sort((a,b)=>a.name.localeCompare(b.name)).slice(0,3):[];
+    box.innerHTML=list.map(c=>`<button type="button" class="chip" data-c="${esc(c.id)}">${esc(c.name)}</button>`).join("")
+      +(matches.length?`<span class="chiplbl">Matches</span>`+matches.map(c=>`<button type="button" class="chip" data-c="${esc(c.id)}">${esc(c.name)}</button>`).join(""):"");
+    box.hidden=!list.length&&!matches.length;vendor.placeholder=list.length&&!q?"Name, or tap one above":"Name, e.g. Sharma Cement";
     $$("[data-c]",box).forEach(b=>b.addEventListener("click",()=>{const c=AS.CM.get(b.dataset.c);if(!c)return;vendor.value=c.name;phone.value=c.phone||"";st.dealTouched=false;paintSug();paintDeal()}));
   }
   function addOther(o){
@@ -145,18 +142,19 @@ export function makeForm(root,{entry,onDone,onCancel}){
     if(!st.dealTouched){const open=ds.filter(d=>!d.closed),byItem=open.filter(d=>d.item&&d.item===st.item);
       st.dealId=byItem.length===1?byItem[0].id:open.length===1?open[0].id:null}
     f("dealWrap").hidden=!ds.length;
-    sel.innerHTML=`<button type="button" class="chip" data-dl="" aria-pressed="${!st.dealId}">General payment</button>`+ds.map(d=>`<button type="button" class="chip" data-dl="${esc(d.id)}" aria-pressed="${d.id===st.dealId}">${esc(d.title)}</button>`).join("");
+    sel.innerHTML=`<button type="button" class="chip" data-dl="" aria-pressed="${!st.dealId}">No deal</button>`+ds.map(d=>`<button type="button" class="chip" data-dl="${esc(d.id)}" aria-pressed="${d.id===st.dealId}">${esc(d.title)}</button>`).join("");
     $$("[data-dl]",sel).forEach(b=>b.addEventListener("click",()=>{st.dealId=b.dataset.dl||null;st.dealTouched=true;paintDeal()}));
     const d=ds.find(x=>x.id===st.dealId),a=pnum(amount.value);
     if(d&&!st.item&&d.item&&AS.IM.has(d.item)){st.item=d.item;paintItem();return}
     if(d){const ag=dealAgreed(d),pd=dealPaid(d,Infinity,entry?.id),bal=round2(ag-pd);
       f("dealHint").textContent=`${agLabel(d)} ${money(ag)} · paid ${money(pd)} · balance ${balText(bal,d)}${a?` → ${balText(round2(bal-a),d)} after this`:""}`}
-    else f("dealHint").textContent=ds.filter(x=>!x.closed).length>1?"Pick the deal this payment is for. General payments show in the passbook but don’t change any deal.":"Not counted against any deal.";
+    else f("dealHint").textContent=ds.filter(x=>!x.closed).length>1?"Pick the deal this payment belongs to. “No deal” payments still show in the passbook.":"Not part of any deal.";
   }
   function autoAmount(){const q=pnum(qty.value),r=pnum(rate.value);if(q&&r&&!st.amountTouched){amount.value=round2(q*r);st.sumMode=false}hint();split();words()}
 
   $$("[data-mode]",root).forEach(b=>b.addEventListener("click",()=>{st.mode=b.dataset.mode;paintMode()}));
   f("clearItem").addEventListener("click",()=>{st.item=null;paintItem()});
+  f("itemBtn").addEventListener("click",()=>openItemPicker(st.item,k=>{st.item=k;paintItem()}));
   f("editItems").addEventListener("click",()=>openGroups(paintItem));
   amount.addEventListener("input",()=>{st.amountTouched=amount.value!=="";st.sumMode=false;hint();split();words()});
   qty.addEventListener("input",autoAmount);rate.addEventListener("input",autoAmount);unit.addEventListener("change",hint);
@@ -217,14 +215,17 @@ export function makeForm(root,{entry,onDone,onCancel}){
       const keptDocs=[...st.files];for(const x of st.newDocs)keptDocs.push(await storeDoc(x));
       if(keptDocs.length)e.files=keptDocs;else delete e.files;
       const droppedDocs=filesOf(entry||{}).filter(x=>!keptDocs.some(y=>y.key===x.key));
+      const before=entry?JSON.parse(JSON.stringify(entry)):null,filesKept=!droppedDocs.length&&!(oldKey&&oldKey!==e.slipKey);
       await saveEntry(e);
       if(oldKey&&oldKey!==e.slipKey)await delSlip(oldKey);
       for(const x of droppedDocs)await delSlip(x.key);
       if(!editing&&st.mode!=="both")lset("ghk-mode",st.mode);
-      toast(!inView(e)?"Saved. It shows under All because its group isn’t in this view.":editing?"Changes saved":"Entry saved");onDone&&onDone();
+      // an edit can be undone unless a file was removed (its photo is already gone)
+      if(editing&&before&&filesKept)toast(!inView(e)?"Saved. It shows under All because its group isn’t in this view.":"Payment updated",{label:"Undo",fn:async()=>{await saveEntry({...before,updatedAt:Date.now()});toast("Change undone")}});
+      else toast(!inView(e)?"Saved. It shows under All because its group isn’t in this view.":editing?"Payment updated":"Payment saved");onDone&&onDone();
     }catch(err){
       console.error(err);toast("Couldn’t save. Phone storage may be full.");
-      btn.disabled=false;btn.textContent=editing?"Save changes":"Save entry";
+      btn.disabled=false;btn.textContent=editing?"Save changes":"Save payment";
     }
   });
   if(onCancel)f("cancel").addEventListener("click",onCancel);
@@ -245,8 +246,8 @@ export function openPaySheet({deal,contact}={}){
 export function resetAdd(){addForm=makeForm($("#addform"),{onDone:resetAdd})}
 export function openEdit(id){openView(id,{edit:true})}
 export async function trashWithUndo(e,after){
-  if(!await ask("Move this entry to trash?",`${[itemName(e)||e.vendor||e.note||"Entry",money(e.amount),fdate(e.ts)].join(" · ")}. You can restore it from Trash.`,{ok:"Move to trash",danger:true}))return;
-  try{await trashIt(e);after&&after();toast("Moved to trash",{label:"Undo",fn:async()=>{const x=D.entries.find(y=>y.id===e.id);if(x){await restoreIt(x);toast("Entry restored")}}})}
+  if(!await ask("Move this payment to trash?",`${[itemName(e)||e.vendor||e.note||"Payment",money(e.amount),fdate(e.ts)].join(" · ")}. You can restore it from Trash.`,{ok:"Move to trash",danger:true}))return;
+  try{await trashIt(e);after&&after();toast("Moved to trash",{label:"Undo",fn:async()=>{const x=D.entries.find(y=>y.id===e.id);if(x){await restoreIt(x);toast("Payment restored")}}})}
   catch{toast("Couldn’t move to trash. Try again.")}
 }
 export const othersOf=e=>(Array.isArray(e.others)?e.others:[]).filter(o=>o&&AS.CM.has(o.contactId));
@@ -279,17 +280,17 @@ export function viewHTML(e){
 export function openView(id,opt={}){
   const find=()=>D.entries.find(x=>x.id===id&&!x.deletedAt);
   if(!find())return;
-  const s=openSheet("Entry","");
+  const s=openSheet("Payment","");
   const top=$(".sheet-top",s.el),acts=document.createElement("div");acts.className="vacts";
-  acts.innerHTML=`<button class="ib" data-v="share" aria-label="Share receipt">${ICON.share}</button><button class="ib" data-v="edit" aria-label="Edit entry">${ICON.edit}</button><button class="ib red" data-v="del" aria-label="Move to trash">${ICON.trash}</button>`;
+  acts.innerHTML=`<button class="ib" data-v="share" aria-label="Share receipt">${ICON.share}</button><button class="ib" data-v="edit" aria-label="Edit payment">${ICON.edit}</button><button class="ib red" data-v="del" aria-label="Move to trash">${ICON.trash}</button>`;
   top.insertBefore(acts,$(".x",top));
   const h2=$("h2",top);
   let editing=false;
   const view=()=>{editing=false;const e=find();if(!e){s.close();return}
-    h2.textContent=itemName(e)||"Entry";acts.hidden=false;s.body.innerHTML=viewHTML(e);
+    h2.textContent=itemName(e)||"Payment";acts.hidden=false;s.body.innerHTML=viewHTML(e);
     const img=$("[data-v=slip]",s.body);if(img)slipURL(e.slipKey).then(u=>{if(u){img.src=u;img.addEventListener("click",()=>viewSlip(u))}});
     $$("[data-doc]",s.body).forEach(b=>b.addEventListener("click",()=>{const x=filesOf(e).find(y=>y.key===b.dataset.doc);if(x)openDoc(x)}))};
-  const edit=()=>{const e=find();if(!e)return;editing=true;h2.textContent="Edit entry";acts.hidden=true;makeForm(s.body,{entry:e,onDone:view,onCancel:view});s.el.querySelector(".sheet").scrollTop=0};
+  const edit=()=>{const e=find();if(!e)return;editing=true;h2.textContent="Edit payment";acts.hidden=true;makeForm(s.body,{entry:e,onDone:view,onCancel:view});s.el.querySelector(".sheet").scrollTop=0};
   $("[data-v=share]",acts).addEventListener("click",()=>openReceipt([id]));
   $("[data-v=edit]",acts).addEventListener("click",edit);
   $("[data-v=del]",acts).addEventListener("click",()=>{const e=find();if(e)trashWithUndo(e,()=>s.close())});

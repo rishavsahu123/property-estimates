@@ -1,7 +1,7 @@
 // Phase 1: seed v1 data with the OLD app, then swap in the new app and check migration + features.
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
-const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
+const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups } = require('./env.cjs');
 const URL = 'http://localhost:8090/';
 (async () => {
   const browser = await chromium.launch();
@@ -57,7 +57,7 @@ const URL = 'http://localhost:8090/';
   await page.screenshot({ path: OUT + '/s1-add.png', fullPage: true });
 
   // add a new entry: pick Reti, qty/rate, both, new vendor with phone
-  await page.selectOption('#addform select[data-g="material"]','reti');
+  await pickItem(page,'reti');
   await page.fill('#addform [data-f="qty"]', '100');
   await page.fill('#addform [data-f="rate"]', '45');
   r.autoAmount = await page.inputValue('#addform [data-f="amount"]');
@@ -70,15 +70,15 @@ const URL = 'http://localhost:8090/';
   r.heroAfterAdd = await page.textContent('#h-total');
 
   // vendor suggestion chips: pick Sharma for a new entry
-  await page.selectOption('#addform select[data-g="material"]','cement');
+  await pickItem(page,'cement');
   r.sugChips = await page.$$eval('#addform [data-f="vendorSug"] .chip', b => b.map(x => x.textContent));
   // "+ New" item
-  await page.selectOption('#addform select[data-g="material"]','__new');
+  await pickItem(page,'__new:material');
   await page.fill('#if-n', 'Plumbing fittings');
   await page.fill('#if-u', 'piece, set');
   await page.click('#if-save');
   await page.waitForTimeout(300);
-  r.newItemSelected = await page.$eval('#addform .gs.on select', s => s.selectedOptions[0].textContent);
+  r.newItemSelected = await page.$eval('#addform [data-f="itemTxt"]', s => s.textContent);
   await page.fill('#addform [data-f="amount"]', '2400');
   await page.click('#addform [data-mode="online"]');
   await page.click('#addform [data-f="save"]');
@@ -91,7 +91,7 @@ const URL = 'http://localhost:8090/';
   await page.click('#if-save');
   await page.waitForTimeout(300);
   await page.click('.sheet .x');
-  r.gittiHidden = !(await page.$('#addform option[value="gitti"]'));
+  r.gittiHidden = !(await pickerGroups(page)).items.includes('gitti');
   await page.screenshot({ path: OUT + '/s2-add-after.png', fullPage: true });
 
   // passbook + filters

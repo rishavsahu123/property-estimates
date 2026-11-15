@@ -23,7 +23,7 @@ export function dealCard(d,withPays,opts={}){
     <div class="dbarw"><div class="dbar" role="img" aria-label="${pct}% paid"><i style="width:${pct}%"></i></div><span class="pc">${d.closed?"Complete":pct+"% paid"}</span></div>
     <div class="dnums"><span>${agLabel(d)}<b class="num">${money(ag)}</b></span><span>Paid<b class="num">${money(pd)}</b></span><span>${isMonthly(d)&&bal>0?"Due now":"Balance"}<b class="num${bal<0&&!isMonthly(d)?" over":""}">${balText(bal,d)}</b></span></div>
     ${withPays?dealPays(d):""}
-    <div class="pact">${d.closed?"":`<button class="linkbtn" data-dp="${esc(d.id)}">+ Add payment</button>`}<button class="linkbtn" data-dk="${esc(d.id)}">Link existing payments</button></div></div>`;
+    <div class="pact">${d.closed?"":`<button class="linkbtn" data-dp="${esc(d.id)}">+ Add payment</button>`}<button class="linkbtn" data-dk="${esc(d.id)}">Add old payments to this deal</button></div></div>`;
 }
 // payments counted against this deal, shown inside its card (first 5, then "Show all")
 export function dealPays(d){
@@ -48,7 +48,7 @@ export function bindDeals(root){
 export function openLinkPays(d){
   const c=AS.CM.get(d.contactId);let everyone=!c;
   const start=new Set(D.entries.filter(e=>!e.deletedAt&&e.dealId===d.id).map(e=>e.id)),on=new Set(start);
-  const s=openSheet("Link payments to this deal","",`Link payments to ${d.title}`);
+  const s=openSheet("Add old payments to this deal","",`Add old payments to ${d.title}`);
   const paint=()=>{
     const es=D.entries.filter(e=>!e.deletedAt&&e.projectId===D.pid&&(on.has(e.id)||start.has(e.id)||everyone||e.contactId===d.contactId)).sort((a,b)=>b.ts-a.ts);
     const paid=round2(D.entries.filter(e=>!e.deletedAt&&on.has(e.id)).reduce((a,e)=>a+(+e.amount||0),0)),ag=dealAgreed(d),changed=[...on].filter(x=>!start.has(x)).length+[...start].filter(x=>!on.has(x)).length;
@@ -65,8 +65,11 @@ export function openLinkPays(d){
     $$("[data-le]",s.body).forEach(b=>b.addEventListener("click",()=>{const id=b.dataset.le;if(on.has(id))on.delete(id);else on.add(id);paint()}));
     $("#lk-save",s.body).addEventListener("click",async()=>{
       try{let n=0;
-        for(const e of D.entries.filter(x=>on.has(x.id)!==start.has(x.id))){if(on.has(e.id))e.dealId=d.id;else delete e.dealId;e.updatedAt=Date.now();await dbPut("entries",e);n++}
-        s.close();emit();toast(`Deal updated · ${plural(on.size,"payment","payments")} linked`)}
+        const prev=new Map();
+        for(const e of D.entries.filter(x=>on.has(x.id)!==start.has(x.id))){prev.set(e.id,e.dealId);if(on.has(e.id))e.dealId=d.id;else delete e.dealId;e.updatedAt=Date.now();await dbPut("entries",e);n++}
+        s.close();emit();toast(`Deal updated · ${plural(on.size,"payment","payments")} in it`,{label:"Undo",fn:async()=>{
+          for(const [id,old] of prev){const e=D.entries.find(x=>x.id===id);if(!e)continue;if(old)e.dealId=old;else delete e.dealId;e.updatedAt=Date.now();await dbPut("entries",e)}
+          emit();toast("Change undone")}})}
       catch{toast("Couldn’t save. Try again.")}});
   };
   paint();

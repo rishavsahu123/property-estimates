@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
+const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups } = require('./env.cjs');
 (async () => {
   const browser = await chromium.launch(); const r = {}, errors = [];
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, serviceWorkers: 'block', acceptDownloads: true, colorScheme: 'dark' });
@@ -8,7 +8,7 @@ const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
   const F = n => `#addform [data-f="${n}"]`;
   // registry entry with main payee + 2 more people
   await page.fill(F('amount'), '126000'); await page.click('#addform [data-mode="online"]');
-  await page.selectOption('#addform select[data-g="land"]', 'registry');
+  await pickItem(page,'registry');
   await page.fill(F('vendor'), 'Sub Registrar Office');
   await page.click(F('addOther'));
   await page.fill('#addform .xp >> nth=0 >> [data-xn]', 'Mahesh Broker'); await page.fill('#addform .xp >> nth=0 >> [data-xp]', '9811122233'); await page.fill('#addform .xp >> nth=0 >> [data-xr]', 'Broker');
@@ -20,7 +20,7 @@ const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
   r.othersAfterSave = await page.$$eval('#addform .xp', x => x.length);
   r.stored = await page.evaluate(async () => { const db = await new Promise(res => { const q = indexedDB.open('ghar-hisaab'); q.onsuccess = () => res(q.result) }); const a = await new Promise(res => { const q = db.transaction('entries').objectStore('entries').getAll(); q.onsuccess = () => res(q.result) }); db.close(); return a.map(e => ({ v: e.vendor, others: e.others })) });
   // another simple entry
-  await page.fill(F('amount'), '5000'); await page.selectOption('#addform select[data-g="people"]', 'thekedar'); await page.fill(F('vendor'), 'Ramesh'); await page.click(F('save')); await page.waitForTimeout(300);
+  await page.fill(F('amount'), '5000'); await pickItem(page,'thekedar'); await page.fill(F('vendor'), 'Ramesh'); await page.click(F('save')); await page.waitForTimeout(300);
   // passbook
   await page.click('nav [data-go="book"]');
   r.rowText = await page.$$eval('#book .entry .s', s => s.map(x => x.textContent));

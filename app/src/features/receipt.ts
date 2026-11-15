@@ -109,17 +109,17 @@ export async function makeReceipt(sel,{history,slips,deal}){
   return{blob,single,who,total:t.t,first,last,count:es.length};
 }
 export function openReceipt(ids,force={}){
-  const es=D.entries.filter(e=>!e.deletedAt&&e.projectId===D.pid&&ids.includes(e.id)).sort((a,b)=>b.ts-a.ts);if(!es.length){toast("Pick at least one entry");return}
+  const es=D.entries.filter(e=>!e.deletedAt&&e.projectId===D.pid&&ids.includes(e.id)).sort((a,b)=>b.ts-a.ts);if(!es.length){toast("Pick at least one payment");return}
   const pk=personOf(es[0]),single=!!pk&&es.every(e=>personOf(e)===pk);
   const slips=es.filter(e=>attachCount(e));
   const nAtt=es.reduce((a,e)=>a+attachCount(e),0);
   const dealOk=es.every(e=>e.dealId&&e.dealId===es[0].dealId)&&D.deals.some(d=>d.id===es[0].dealId);
   const opt={history:single&&lget("pe-rc-hist",true),slips:slips.length>0&&lget("pe-rc-slips",true),deal:dealOk&&(force.deal??lget("pe-rc-deal",false))};
   // every option is always shown on one line; the ⓘ explains it (hover on desktop, tap on phone)
-  const optRow=(id,on,ok,label,info,why)=>`<div class="rcopt${ok?"":" off"}"><label class="check"><input type="checkbox" id="${id}"${on?" checked":""}${ok?"":" disabled"}><span>${label}</span></label><button type="button" class="tipi" data-tip="${esc(ok?info:why)}" aria-label="${esc(ok?info:why)}">i</button></div>`;
+  const optRow=(id,on,ok,label,info,why)=>`<div class="rcopt${ok?"":" off"}"><label class="check"><input type="checkbox" id="${id}"${on?" checked":""}${ok?"":" disabled"}><span>${label}</span></label><small class="rch">${esc(ok?info:why)}</small></div>`;
   const s=openSheet("Share receipt",`
     <div class="rcopts">
-      ${optRow("rc-h",opt.history,single,"Past payments","Adds a table of all payments to this person up to this date","These entries are for different shops or people")}
+      ${optRow("rc-h",opt.history,single,"Past payments","Adds a table of all payments to this person up to this date","These payments are for different shops or people")}
       ${optRow("rc-d",opt.deal,dealOk,"Deal summary","Adds the deal’s agreed amount, paid so far and balance",es.some(e=>e.dealId)?"Pick payments of a single deal":"Not linked to a deal")}
       ${optRow("rc-s",opt.slips,nAtt>0,nAtt?`Attachments (${nAtt})`:"Attachments","Sends slip photos and attached files along with the receipt","No slip photo or file attached")}
     </div>
@@ -135,10 +135,6 @@ export function openReceipt(ids,force={}){
   };
   const h=$("#rc-h",s.body),sl=$("#rc-s",s.body);
   const dk=$("#rc-d",s.body);
-  // tap the ⓘ (or a greyed-out row) to read why; hover shows the same text on desktop
-  $$(".rcopt",s.body).forEach(row=>{const tip=$(".tipi",row);
-    tip.addEventListener("click",ev=>{ev.preventDefault();$$(".tipi.show",s.body).forEach(x=>x!==tip&&x.classList.remove("show"));tip.classList.toggle("show")});
-    if(row.classList.contains("off"))row.addEventListener("click",ev=>{if(ev.target!==tip){$$(".tipi.show",s.body).forEach(x=>x.classList.remove("show"));tip.classList.add("show")}})});
   h.addEventListener("change",()=>{opt.history=h.checked;lset("pe-rc-hist",h.checked);build()});
   dk.addEventListener("change",()=>{opt.deal=dk.checked;lset("pe-rc-deal",dk.checked);build()});
   sl.addEventListener("change",()=>{opt.slips=sl.checked;lset("pe-rc-slips",sl.checked);build()});

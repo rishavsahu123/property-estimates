@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
+const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups } = require('./env.cjs');
 const URL = 'http://localhost:8090/';
 (async () => {
   const browser = await chromium.launch();
@@ -10,7 +10,7 @@ const URL = 'http://localhost:8090/';
   r.defaultDate = await page.inputValue('#addform [data-f="when"]');
   await page.fill('#addform [data-f="amount"]', '500'); await page.click('#addform [data-f="save"]'); await page.waitForTimeout(300);
   r.afterSaveDate = await page.inputValue('#addform [data-f="when"]');
-  await page.fill('#addform [data-f="amount"]', '25000'); await page.selectOption('#addform select[data-g="people"]', 'thekedar');
+  await page.fill('#addform [data-f="amount"]', '25000'); await pickItem(page,'thekedar');
   await page.fill('#addform [data-f="when"]', '2026-09-15'); await page.click('#addform [data-f="save"]'); await page.waitForTimeout(300);
   r.dateResetAfterSave = await page.inputValue('#addform [data-f="when"]');
   r.recent = await page.$$eval('#recent .entry', b => b.map(x => x.innerText.replace(/\s+/g, ' ').slice(0, 40)));

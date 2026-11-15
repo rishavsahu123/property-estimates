@@ -1,7 +1,7 @@
 // Upgrade from v2.2 (catalog, no groups) -> groups with Unknown, view switch, dropdown picker, group CRUD, receipt, backup.
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
-const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
+const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups } = require('./env.cjs');
 const URL = 'http://localhost:8090/';
 (async () => {
   const browser = await chromium.launch();
@@ -41,13 +41,13 @@ const URL = 'http://localhost:8090/';
   fs.copyFileSync(DIST + '/index.html', SERVE + '/index.html');
   await page.goto(URL + '?fresh=' + Date.now()); await page.waitForSelector('#boot', { state: 'detached' });
   r.groups = await page.evaluate(async () => { const db = await new Promise(res => { const q = indexedDB.open('ghar-hisaab'); q.onsuccess = () => res(q.result) }); const g = await new Promise(res => { const q = db.transaction('meta').objectStore('meta').get('groups'); q.onsuccess = () => res(q.result) }); db.close(); return g.map(x => `${x.n}:${x.kind}`) });
-  r.dropdowns = await page.$$eval('#addform .gs small', s => s.map(x => x.textContent));
+  r.dropdowns = [...await pickerGroups(page)];
   await page.screenshot({ path: OUT + '/g1-add.png' });
   // view construction while all Unknown -> nothing
-  await page.selectOption('#viewsel', 'construction');
+  await page.click('#viewseg [data-v=\"construction\"]');
   r.constrTotalUnknown = await page.textContent('#h-total');
-  r.constrDropdownsUnknown = await page.$$eval('#addform .gs', s => s.length);
-  await page.selectOption('#viewsel', 'all');
+  r.constrDropdownsUnknown = (await pickerGroups(page)).length;
+  await page.click('#viewseg [data-v=\"all\"]');
   // edit groups: set categories
   await page.click('#addform [data-f="editItems"]');
   r.unknownTags = await page.$$eval('.sheet .tag.unk', t => t.length);
@@ -71,23 +71,23 @@ const URL = 'http://localhost:8090/';
   r.groupsAfter = await page.$$eval('.sheet .ghead', h => h.map(x => x.innerText.replace(/\s+/g, ' ')));
   await page.screenshot({ path: OUT + '/g3-groups-after.png', fullPage: true });
   await page.click('.sheet .x');
-  r.dropdownsAfter = await page.$$eval('#addform .gs small', s => s.map(x => x.textContent));
+  r.dropdownsAfter = [...await pickerGroups(page)];
   // add entry via dropdown: Electrical > Wire
-  await page.selectOption(`#addform select[data-g="${elecKey}"]`, { label: 'Wire' });
+  await pickItem(page,'label:Wire');
   r.qtyShown = await page.isVisible('#addform [data-f="qty"]');
   await page.fill('#addform [data-f="qty"]', '2'); await page.fill('#addform [data-f="rate"]', '1450');
   await page.click('#addform [data-f="save"]'); await page.waitForTimeout(300);
   await page.screenshot({ path: OUT + '/g4-add-after.png' });
   // views
   r.allTotal = await page.textContent('#h-total');
-  await page.selectOption('#viewsel', 'construction');
-  r.constr = [await page.textContent('#h-label'), await page.textContent('#h-total'), await page.$$eval('#addform .gs small', s => s.map(x => x.textContent))];
+  await page.click('#viewseg [data-v=\"construction\"]');
+  r.constr = [await page.textContent('#h-label'), await page.textContent('#h-total'), [...await pickerGroups(page)]];
   await page.click('nav [data-go="book"]'); r.constrBook = await page.textContent('#b-count');
-  await page.selectOption('#viewsel', 'documents');
+  await page.click('#viewseg [data-v=\"documents\"]');
   r.docs = [await page.textContent('#h-total'), await page.textContent('#b-count')];
   await page.click('nav [data-go="people"]'); r.peopleInDocs = await page.$$eval('#contacts .crow:not(.idle)', c => c.length);
   await page.click('nav [data-go="sum"]'); r.docsSum = await page.$$eval('#costsplit .trow', t => t.map(x => x.innerText.replace(/\s+/g, ' ')));
-  await page.selectOption('#viewsel', 'all');
+  await page.click('#viewseg [data-v=\"all\"]');
   r.allSum = await page.$$eval('#costsplit .trow', t => t.map(x => x.innerText.replace(/\s+/g, ' ')));
   r.legend = await page.$$eval('#glegend span:nth-child(4n+2)', s => s.map(x => x.textContent));
   await page.screenshot({ path: OUT + '/g5-sum.png', fullPage: true });
@@ -112,7 +112,7 @@ const URL = 'http://localhost:8090/';
   const p2 = await ctx2.newPage(); p2.on('pageerror', e => errors.push('p2: ' + e.message)); p2.on('dialog', d => d.accept());
   await p2.goto(URL); await p2.waitForSelector('#boot', { state: 'detached' });
   await p2.setInputFiles('#restorefile', OUT + '/g-backup.json'); await p2.waitForTimeout(1200);
-  r.restored = [await p2.textContent('#h-total'), await p2.$$eval('#addform .gs small', s => s.map(x => x.textContent))];
+  r.restored = [await p2.textContent('#h-total'), [...await pickerGroups(p2)]];
   r.errors = errors;
   console.log(JSON.stringify(r, null, 1));
   await browser.close();

@@ -42,7 +42,13 @@ Planned for Google Play / App Store later with a subscription (see roadmap.md).
 - Don't run code at module top level that uses another module's const; keep it inside functions, because module cycles exist.
 - Tests poke state through `window.__pe` (D, SHEETS, dealAgreed).
 
+## Plans
+- `.claude/production-plan.md`: phases (TypeScript, Drive backup, subscription, release).
+- `.claude/improvements.md`: Track A (remove confusion in existing screens) and Track B (new features, P1–P3), plus the suggested order. Use both files when asked "what is pending".
+- Rule: keep every feature, remove every confusion. Fix existing problems before adding new ones.
+
 ## Features in place
+- v2.11.0 (Track A): `#viewseg` segmented view switch (no more #viewsel select). The item picker is `openItemPicker` (catalog.ts); the form has `[data-f=itemBtn]`, `[data-f=itemTxt]` and `[data-f=itemRecent]` chips. Tests use `pickItem(page,key)` and `pickerGroups(page)` from tests/e2e/env.cjs. Home has #welcome and #catnote. Settings live in #m-info (gear). Error toasts get class "bad". Undo toasts follow edits and deal linking. The wording is "payment" everywhere.
 - v2.10.4: the ⬇ menu has "PDF report" (table only) and "PDF with slip photos" (`buildPdf(list,{photos})`). The passbook's own PDF button is gone; select mode has a PDF button (`pdfOfEntries` asks with or without photos). A long press on a passbook entry starts select mode (`longPress`; the lift after it is skipped through PB.lpAt). With past payments on, the receipt lists the picked payments only in the table (highlighted, details under the item).
 - v2.10.3: receipt payment lists and the past-payments table are newest first; past payments uses every payment in the project and also works for deal shares. Passbook rows show no amount in words (the entry view still does), the note is highlighted, and files show as type icons (`attachIcons`/`fileKind`). The entry form has a single "Attach slip photo or file" (old slip photos show as a file chip). Shop or person shows quick-pick chips first, then name and mobile side by side. The Save bar is sticky (`.savebar`). Exports use `photoKeyOf` (old slip, or first JPEG/PNG file).
 - v2.10.2: each deal card has "Link existing payments" (`openLinkPays`). Tick or untick payments to put them in or take them out of the deal. It shows this person's payments, or everyone's; a payment already in another deal moves here when ticked.

@@ -14,12 +14,12 @@ export function renderTrash(){
   $("#emptytrash").hidden=!t.length;
   const find=id=>AS.TRASH.find(x=>x.id===id);
   $$("[data-restore]",ul).forEach(b=>b.addEventListener("click",async()=>{const e=find(b.dataset.restore);if(!e)return;
-    try{await restoreIt(e);toast("Entry restored")}catch{toast("Couldn’t restore. Try again.")}}));
+    try{await restoreIt(e);toast("Payment restored")}catch{toast("Couldn’t restore. Try again.")}}));
   $$("[data-purge]",ul).forEach(b=>b.addEventListener("click",async()=>{const e=find(b.dataset.purge);if(!e)return;
-    if(!await ask("Delete this entry forever?","It can’t be recovered after this.",{ok:"Delete forever",danger:true}))return;
+    if(!await ask("Delete this payment forever?","It can’t be recovered after this.",{ok:"Delete forever",danger:true}))return;
     try{await purge(e);toast("Deleted forever")}catch{toast("Couldn’t delete. Try again.")}}));
 }
 $("#emptytrash").addEventListener("click",async()=>{
-  const t=[...AS.TRASH];if(!t.length||!await ask(`Delete all ${t.length} entries in trash forever?`,"They can’t be recovered.",{ok:"Delete forever",danger:true}))return;
+  const t=[...AS.TRASH];if(!t.length||!await ask(`Delete all ${t.length} payments in trash forever?`,"They can’t be recovered.",{ok:"Delete forever",danger:true}))return;
   try{for(const e of t)await purge(e);toast("Trash emptied")}catch{toast("Couldn’t empty trash. Try again.")}
 });

@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
+const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups } = require('./env.cjs');
 const fs = require('fs');
 (async () => {
   const browser = await chromium.launch(); const r = {}, errors = [];
@@ -8,7 +8,7 @@ const fs = require('fs');
   await page.goto('http://localhost:8090/?t=' + Date.now()); await page.waitForSelector('#boot', { state: 'detached' });
   const F = n => `#addform [data-f="${n}"]`;
   const count = () => page.evaluate(async () => { const db = await new Promise(res => { const q = indexedDB.open('ghar-hisaab'); q.onsuccess = () => res(q.result) }); const n = await new Promise(res => { const q = db.transaction('slips').objectStore('slips').count(); q.onsuccess = () => res(q.result) }); db.close(); return n });
-  await page.fill(F('amount'), '126000'); await page.selectOption('#addform select[data-g="land"]', 'registry'); await page.fill(F('vendor'), 'Adv. Jain');
+  await page.fill(F('amount'), '126000'); await pickItem(page,'registry'); await page.fill(F('vendor'), 'Adv. Jain');
   await page.setInputFiles(F('docs'), [
     { name: 'Sale deed.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 test') },
     { name: 'Agreement.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: Buffer.alloc(3000, 1) },
@@ -32,8 +32,8 @@ const fs = require('fs');
   await page.click('.sheet [data-v="edit"]'); await page.click('.sheet [data-rmdoc] >> nth=1'); await page.click('.sheet [data-f="save"]'); await page.waitForTimeout(400);
   r.afterRemove = [await page.$$eval('.sheet .docs .dn', d => d.map(x => x.textContent)), await count()];
   await page.click('.sheet [data-v="share"]'); await page.waitForTimeout(700);
-  r.opts = await page.$$eval('.sheet .rcopt', l => l.map(x => `${x.querySelector('input').checked ? '[x]' : '[ ]'}${x.querySelector('input').disabled ? '(off)' : ''} ${x.querySelector('.check').innerText} | ${x.querySelector('.tipi').dataset.tip}`));
-  await page.click('.sheet .rcopt:nth-child(2)'); r.tipShown = await page.$eval('.sheet .rcopt:nth-child(2) .tipi', t => t.classList.contains('show'));
+  r.opts = await page.$$eval('.sheet .rcopt', l => l.map(x => `${x.querySelector('input').checked ? '[x]' : '[ ]'}${x.querySelector('input').disabled ? '(off)' : ''} ${x.querySelector('.check').innerText} | ${x.querySelector('.rch').textContent}`));
+  await page.click('.sheet .rcopt:nth-child(2)'); r.tipShown = await page.$eval('.sheet .rcopt:nth-child(2) .rch', t => !!t.textContent);
   await page.screenshot({ path: 'f3-share.png' });
   await page.evaluate(() => document.querySelectorAll('.sheet-bg').forEach(x => x.remove()));
   // filter attachments

@@ -18,40 +18,45 @@
 <main>
   <div class="topbar">
     <div class="tleft">
-      <button class="projbtn" id="projbtn" aria-label="Switch project"><span id="projname">Project</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
-      <select class="viewsel" id="viewsel" aria-label="Show in the app"><option value="all">All</option><option value="construction">Construction</option><option value="documents">Documents</option></select>
+      <button class="projbtn" id="projbtn" aria-label="Project: change or add"><span class="pl"><small>Project</small><span id="projname">Project</span></span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
     </div>
     <div class="ticons">
       <button class="ibtn" id="m-down-b" aria-label="Download PDF, Excel or backup" aria-expanded="false" aria-controls="m-down"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></button>
       <button class="ibtn" id="m-up-b" aria-label="Restore from backup" aria-expanded="false" aria-controls="m-up"><svg viewBox="0 0 24 24"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg></button>
-      <button class="ibtn" id="m-info-b" aria-label="About your data and settings" aria-expanded="false" aria-controls="m-info"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.6v.2"/></svg></button>
+      <button class="ibtn" id="m-info-b" aria-label="Settings" aria-expanded="false" aria-controls="m-info"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </div>
     <div class="menu" id="m-down" hidden>
-      <button class="mi" id="pdf"><svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg><span><b>PDF report</b><small>All entries of this project as a table. Small file.</small></span></button>
+      <button class="mi" id="pdf"><svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg><span><b>PDF report</b><small>All payments of this project as a table. Small file.</small></span></button>
       <button class="mi" id="pdf-photos"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg><span><b>PDF with slip photos</b><small>The same table, then every slip photo. Bigger file.</small></span></button>
       <button class="mi" id="excel"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M4 15h16M10 4v16"/></svg><span><b>Excel sheet</b><small>This project, slip photos inside the rows.</small></span></button>
       <button class="mi" id="backup"><svg viewBox="0 0 24 24"><path d="M5 8h14v11H5zM3 4h18v4H3zM10 12h4"/></svg><span><b>Full backup</b><small>All projects and photos. Keep it on Google Drive or WhatsApp.</small></span></button>
     </div>
     <div class="menu" id="m-up" hidden>
-      <button class="mi" id="restorebtn"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg><span><b>Restore from backup</b><small>Pick a backup file. Adds its entries; nothing on this phone is removed.</small></span></button>
+      <button class="mi" id="restorebtn"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg><span><b>Restore from backup</b><small>Pick a backup file. Adds its payments; nothing on this phone is removed.</small></span></button>
       <input type="file" id="restorefile" accept=".json,application/json,text/plain" hidden>
     </div>
     <div class="menu" id="m-info" hidden>
       <div class="minfo">
-        <p><b>Your data stays on this phone.</b> If you uninstall the app or clear Chrome’s data, it’s gone. Save a full backup from the download menu now and then.</p>
-        <p id="lastbackup"></p>
-        <p id="storeuse" hidden></p>
-        <p><b>PDF or Excel?</b> The PDF shows every slip photo and opens anywhere. Excel photos show in the Excel or WPS app, not in WhatsApp or Google Drive previews.</p>
-        <p><b>Restore</b> adds entries from a backup file and keeps everything already on this phone. A backup from the old Ghar ka Hisaab app works too.</p>
-        <p><b>All, Construction, Documents</b> next to the project name filters the whole app. Each group’s category is set in Edit groups on the Add screen. Groups marked Unknown show only under All.</p>
-        <p><b>Receipts:</b> in Passbook tap Select, pick entries, then Share receipt.</p>
+        <h3 class="mh">Settings</h3>
         <span class="lbl" style="margin-top:0">Appearance</span>
         <div class="seg" role="group" aria-label="Theme" id="theme">
           <button type="button" data-theme="auto">Auto</button><button type="button" data-theme="light">Light</button><button type="button" data-theme="dark">Dark</button>
         </div>
+        <span class="lbl">Backup</span>
+        <p style="margin-top:0"><b>Your data stays on this phone.</b> If you uninstall the app or clear Chrome’s data, it’s gone. Keep a backup file on Google Drive or WhatsApp.</p>
+        <p id="lastbackup"></p>
+        <div class="pact"><button type="button" class="linkbtn" id="set-backup">Back up now</button><button type="button" class="linkbtn" id="set-restore">Restore from a file</button></div>
+        <span class="lbl">Help</span>
+        <p style="margin-top:0"><b>All, Construction, Documents</b> next to the project name filters the whole app. A yellow bar shows when only one is shown.</p>
+        <p><b>Receipts:</b> hold a payment in Passbook to select, then Share receipt.</p>
+        <p><b>PDF or Excel?</b> The PDF opens anywhere. Excel photos show in the Excel or WPS app.</p>
+        <span class="lbl">About</span>
+        <p style="margin-top:0" id="appver"></p>
+        <p id="storeuse" hidden></p>
       </div>
     </div>
   </div>
+  <div class="seg viewseg" id="viewseg" role="group" aria-label="Show payments for"><button type="button" data-v="all">All</button><button type="button" data-v="construction">Construction</button><button type="button" data-v="documents">Documents</button></div>
 
   <section id="v-add">
     <div class="hero">
@@ -61,14 +66,16 @@
       </div>
       <div class="status" id="status"></div>
     </div>
+    <div class="card" id="welcome" hidden></div>
+    <div class="notice" id="catnote" hidden></div>
     <div class="card" id="installcard" hidden>
       <h2>Install on this phone</h2>
       <p class="pmeta" style="margin:0">Adds Property Estimates to your home screen. It then opens like a normal app and works without internet.</p>
       <button class="primary" id="install">Install app</button>
     </div>
-    <div class="card" id="addcard"><h2>Add new entry</h2><div id="addform"></div></div>
+    <div class="card" id="addcard"><h2>Add payment</h2><div id="addform"></div></div>
     <div class="card">
-      <h2>Latest entries</h2>
+      <h2>Latest payments</h2>
       <ul class="book" id="recent"></ul>
       <button class="more" data-go="book">Open passbook</button>
     </div>
@@ -104,7 +111,7 @@
   <section id="v-trash" hidden>
     <div class="card">
       <div class="phead"><h2>Trash</h2><button class="linkbtn" data-go="book">Back to passbook</button></div>
-      <p class="pmeta" style="margin:0 0 6px">Deleted entries stay here until you remove them for good. They don’t count in any totals.</p>
+      <p class="pmeta" style="margin:0 0 6px">Deleted payments stay here until you remove them for good. They don’t count in any totals.</p>
       <ul class="book" id="trash"></ul>
       <button class="danger" id="emptytrash" hidden>Empty trash</button>
     </div>
@@ -147,8 +154,8 @@
 
 <div class="selbar" id="selbar" hidden><div>
   <span class="grow"><span id="sel-n">0 selected</span><span class="num" id="sel-t">₹0</span></span>
-  <button class="del" id="sel-del" aria-label="Move selected entries to trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></button>
-  <button class="del" id="sel-pdf" aria-label="PDF of selected entries"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg></button>
+  <button class="del" id="sel-del" aria-label="Move selected payments to trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></button>
+  <button class="del" id="sel-pdf" aria-label="Download PDF of selected payments" title="Download PDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></button>
   <button class="go" id="sel-share">Share receipt</button>
   <button class="cl" id="sel-x" aria-label="Stop selecting">×</button>
 </div></div>

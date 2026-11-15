@@ -9,20 +9,25 @@ import { backupNote } from "../features/home";
 import { PB } from "../features/passbook";
 import { paintTheme } from "../features/summary";
 import { AS, blankF, D, emit } from "../state";
-import { $, lset, toast } from "./dom";
+import { $, $$, lset, toast } from "./dom";
 
-export function paintView(){const v=$("#viewsel");v.value=AS.VIEW;v.classList.toggle("on",AS.VIEW!=="all");
-  const c=paintView.c||(paintView.c=document.createElement("canvas").getContext("2d"));c.font='600 14px Hind, "Noto Sans", system-ui, sans-serif';
-  v.style.width=Math.ceil(c.measureText(v.options[v.selectedIndex].text).width+46)+"px"}
+export function paintView(){
+  $$("#viewseg [data-v]").forEach(b=>{const on=b.dataset.v===AS.VIEW;b.setAttribute("aria-pressed",String(on))});
+  $("#viewseg").classList.toggle("on",AS.VIEW!=="all");
+}
 document.fonts&&document.fonts.ready.then(()=>{if(dbReady())paintView()});
-$("#viewsel").addEventListener("change",()=>{AS.VIEW=$("#viewsel").value;lset("pe-view",AS.VIEW);AS.F=blankF();PB.limit=150;if(PB.sel)PB.sel.clear();
+$$("#viewseg [data-v]").forEach(b=>b.addEventListener("click",()=>{if(AS.VIEW===b.dataset.v)return;AS.VIEW=b.dataset.v;lset("pe-view",AS.VIEW);AS.F=blankF();PB.limit=150;if(PB.sel)PB.sel.clear();
   paintView();emit();resetAdd();
-  if(AS.VIEW!=="all"){const unk=D.groups.filter(g=>!g.kind).length;toast(unk?`${KINDS[AS.VIEW]} only. ${plural(unk,"group is","groups are")} Unknown, set them in Edit groups.`:`Showing ${KINDS[AS.VIEW].toLowerCase()} only`)}else toast("Showing everything")});
+  if(AS.VIEW!=="all"){const unk=D.groups.filter(g=>!g.kind).length;if(unk)toast(`${plural(unk,"group has","groups have")} no category yet, set them in Edit groups.`)}}));
+
+
+$("#set-backup").addEventListener("click",()=>{closeMenus();$("#backup").click()});
+$("#set-restore").addEventListener("click",()=>{closeMenus();$("#restorefile").click()});
 
 export const MENUS=[["m-down-b","m-down"],["m-up-b","m-up"],["m-info-b","m-info"]];
 export function closeMenus(except){MENUS.forEach(([b,m])=>{if(m!==except){$("#"+m).hidden=true;$("#"+b).setAttribute("aria-expanded","false")}})}
 MENUS.forEach(([b,m])=>$("#"+b).addEventListener("click",ev=>{ev.stopPropagation();const open=$("#"+m).hidden;closeMenus(m);
-  $("#"+m).hidden=!open;$("#"+b).setAttribute("aria-expanded",String(open));if(open&&m==="m-info"){backupNote();paintTheme();storageNote().then(t=>{const el=$("#storeuse");if(el){el.textContent=t;el.hidden=!t}})}}));
+  $("#"+m).hidden=!open;$("#"+b).setAttribute("aria-expanded",String(open));if(open&&m==="m-info"){backupNote();paintTheme();$("#appver").textContent=`Property Estimates ${__APP_VERSION__.replace(/^pe-v/,"v").replace(/-[a-z0-9]+$/,"")}`;storageNote().then(t=>{const el=$("#storeuse");if(el){el.textContent=t;el.hidden=!t}})}}));
 document.addEventListener("click",ev=>{if(!ev.target.closest(".menu"))closeMenus()});
 document.addEventListener("keydown",ev=>{if(ev.key==="Escape")closeMenus()});
 let busy=false;

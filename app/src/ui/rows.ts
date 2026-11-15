@@ -23,7 +23,7 @@ export function rowHTML(e,bal,sel,acts,opt={}){
       ${e.note?`<span class="rnote">${esc(e.note)}</span>`:""}
       ${attachIcons(e)}</span>
     <span class="amt"><span class="num">${money(e.amount)}</span><br>${mode}${bal!=null?`<span class="bal">Total ${money(bal)}</span>`:""}</span>
-  </button>${acts?`<div class="ract"><button class="ib" data-ra="share" data-id="${esc(e.id)}" aria-label="Share receipt">${ICON.share}</button><button class="ib" data-ra="edit" data-id="${esc(e.id)}" aria-label="Edit entry">${ICON.edit}</button><button class="ib red" data-ra="del" data-id="${esc(e.id)}" aria-label="Move to trash">${ICON.trash}</button></div>`:""}</li>`;
+  </button>${acts?`<div class="ract"><button class="ib" data-ra="share" data-id="${esc(e.id)}" aria-label="Share receipt">${ICON.share}</button><button class="ib" data-ra="edit" data-id="${esc(e.id)}" aria-label="Edit payment">${ICON.edit}</button><button class="ib red" data-ra="del" data-id="${esc(e.id)}" aria-label="Move to trash">${ICON.trash}</button></div>`:""}</li>`;
 }
 export function bindRows(ul){$$(".entry",ul).forEach(b=>b.addEventListener("click",()=>openView(b.dataset.id)))}
 export const sums=list=>{let t=0,c=0;list.forEach(e=>{t+=+e.amount||0;c+=+e.cash||0});return{t,c,o:t-c}};

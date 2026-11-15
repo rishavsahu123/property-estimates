@@ -34,7 +34,7 @@ export async function buildExcel(){
   await loadExcel();
   const p=proj(),wb=new ExcelJS.Workbook();wb.creator="Property Estimates";wb.created=new Date();
   const MONEY='"₹"#,##0.00',head=r=>{r.font={bold:true};r.eachCell(c=>{c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFF2B705"}};c.alignment={vertical:"middle"}})};
-  const ws=wb.addWorksheet("Entries",{views:[{state:"frozen",ySplit:1}]});
+  const ws=wb.addWorksheet("Payments",{views:[{state:"frozen",ySplit:1}]});
   ws.columns=[{header:"Date",key:"date",width:13},{header:"Item",key:"item",width:18},{header:"Group",key:"group",width:20},
     {header:"Quantity",key:"qty",width:10},{header:"Unit",key:"unit",width:10},{header:"Rate",key:"rate",width:12},
     {header:"Amount",key:"amount",width:14},{header:"Cash",key:"cash",width:13},{header:"Online",key:"online",width:13},
@@ -64,7 +64,7 @@ export async function buildExcel(){
   ws.autoFilter={from:"A1",to:`N${n}`};
 
   const s2=wb.addWorksheet("By item");
-  s2.columns=[{header:"Group",key:"g",width:22},{header:"Item",key:"i",width:22},{header:"Entries",key:"n",width:9},{header:"Quantity",key:"q",width:36},{header:"Amount",key:"a",width:15}];
+  s2.columns=[{header:"Group",key:"g",width:22},{header:"Item",key:"i",width:22},{header:"Payments",key:"n",width:9},{header:"Quantity",key:"q",width:36},{header:"Amount",key:"a",width:15}];
   head(s2.getRow(1));
   const groups=byItem(list);
   [...D.groups.map(g=>g.k),"none"].forEach(cat=>groups.filter(g=>g.cat===cat).forEach(g=>{
@@ -84,7 +84,7 @@ export async function buildExcel(){
   return{blob:new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),name:`property-estimates-${slug(p.name)}${AS.VIEW!=="all"?"-"+AS.VIEW:""}-${localDay()}.xlsx`,rows:list.length,slips};
 }
 $("#excel").addEventListener("click",()=>task("Preparing Excel…",async()=>{
-  if(!AS.LIVE.length){toast("No entries to export yet");return}
+  if(!AS.LIVE.length){toast("No payments to export yet");return}
   try{const x=await buildExcel();await giveFile(x.name,x.blob)}
   catch(err){console.error(err);toast(err&&err.message==="lib"?"Couldn’t load the Excel tool. Open the app once with internet, then try again.":"Couldn’t make the Excel file. Try again.")}
 }));
@@ -109,7 +109,7 @@ export async function buildPdf(list,{title,filters,photos=true}){
   y+=30;font("bold",20,INK);doc.text(pdfText(p.name),M,y);
   y+=17;font("normal",10,MUTED);
   const span=list.length?`${fdate(list[0].ts)} to ${fdate(list[list.length-1].ts)}`:"";
-  doc.splitTextToSize(pdfText(`${title}${AS.VIEW!=="all"?` (${KINDS[AS.VIEW]} only)`:""}. ${plural(list.length,"entry","entries")}${span?", "+span:""}. Made on ${fdate(Date.now())}.`),CW).forEach(l=>{doc.text(l,M,y);y+=13});
+  doc.splitTextToSize(pdfText(`${title}${AS.VIEW!=="all"?` (${KINDS[AS.VIEW]} only)`:""}. ${plural(list.length,"payment","payments")}${span?", "+span:""}. Made on ${fdate(Date.now())}.`),CW).forEach(l=>{doc.text(l,M,y);y+=13});
   if(filters){doc.splitTextToSize(pdfText("Filters: "+filters),CW).forEach(l=>{doc.text(l,M,y);y+=13})}
 
   // totals
@@ -153,7 +153,7 @@ export async function buildPdf(list,{title,filters,photos=true}){
     if(y+60>BOTTOM)newPage();
     font("bold",13,INK);doc.text("By item",M,y);y+=8;
     [...D.groups.map(g=>g.k),"none"].forEach(cat=>groups.filter(g=>g.cat===cat).forEach(g=>{
-      font("normal",9,MUTED);const q=doc.splitTextToSize(pdfText(`${cat==="none"?"":gName(cat)+". "}${plural(g.n,"entry","entries")}${g.qtext?". "+g.qtext:""}`),CW-110);
+      font("normal",9,MUTED);const q=doc.splitTextToSize(pdfText(`${cat==="none"?"":gName(cat)+". "}${plural(g.n,"payment","payments")}${g.qtext?". "+g.qtext:""}`),CW-110);
       const h=16+q.length*11;if(y+h>BOTTOM)newPage();
       font("bold",10,INK);doc.text(pdfText(g.name),M,y+14);doc.text(pdfMoney(g.amt),M+CW,y+14,{align:"right"});
       font("normal",9,MUTED);q.forEach((l,j)=>doc.text(l,M,y+26+j*11));
@@ -193,20 +193,20 @@ export async function buildPdf(list,{title,filters,photos=true}){
   return{blob:doc.output("blob"),name:`property-estimates-${slug(p.name)}${AS.VIEW!=="all"?"-"+AS.VIEW:""}-${localDay()}.pdf`};
 }
 export async function pdfClick(btn,list,opts){
-  if(!list.length){toast("No entries to export");return}
+  if(!list.length){toast("No payments to export");return}
   const label=btn&&btn.textContent;if(btn){btn.disabled=true;btn.textContent="Preparing PDF…"}
   try{const x=await buildPdf(list,opts);await giveFile(x.name,x.blob)}
   catch(err){console.error(err);toast(err&&err.message==="lib"?"Couldn’t load the PDF tool. Open the app once with internet, then try again.":"Couldn’t make the PDF. Try again.")}
   if(btn){btn.disabled=false;btn.textContent=label}
 }
-$("#pdf").addEventListener("click",()=>task("Preparing PDF…",()=>pdfClick(null,AS.LIVE,{title:"All entries",photos:false})));
-$("#pdf-photos").addEventListener("click",()=>task("Preparing PDF…",()=>pdfClick(null,AS.LIVE,{title:"All entries",photos:true})));
+$("#pdf").addEventListener("click",()=>task("Preparing PDF…",()=>pdfClick(null,AS.LIVE,{title:"All payments",photos:false})));
+$("#pdf-photos").addEventListener("click",()=>task("Preparing PDF…",()=>pdfClick(null,AS.LIVE,{title:"All payments",photos:true})));
 /** PDF of picked entries: asks with or without slip photos */
 export function pdfOfEntries(list,title){
-  if(!list.length){toast("No entries to export");return}
+  if(!list.length){toast("No payments to export");return}
   const nPh=list.filter(e=>photoKeyOf(e)).length;
-  const s=openSheet("PDF of these entries",`
-    <p class="pmeta" style="margin:0 0 4px">${plural(list.length,"entry","entries")} · ${money(sums(list).t)}</p>
+  const s=openSheet("PDF of these payments",`
+    <p class="pmeta" style="margin:0 0 4px">${plural(list.length,"payment","payments")} · ${money(sums(list).t)}</p>
     <button class="primary" data-pp="0">PDF report</button>
     <button class="second" data-pp="1"${nPh?"":" disabled"}>PDF with slip photos${nPh?` (${nPh})`:" (none attached)"}</button>`);
   $$("[data-pp]",s.body).forEach(b=>b.addEventListener("click",()=>{const photos=b.dataset.pp==="1";s.close();

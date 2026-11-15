@@ -14,10 +14,10 @@ export function openProjects(){
   const paint=()=>{
     const cur=proj();
     s.body.innerHTML=D.projects.map(p=>{const es=D.entries.filter(e=>e.projectId===p.id&&!e.deletedAt);
-      return `<button class="prow" data-p="${esc(p.id)}" aria-current="${p.id===D.pid}"><span><b>${esc(p.name)}</b><small>${plural(es.length,"entry","entries")}${p.id===D.pid?" · open now":""}</small></span><span class="num">${money(sums(es).t)}</span></button>`}).join("")
+      return `<button class="prow" data-p="${esc(p.id)}" aria-current="${p.id===D.pid}"><span><b>${esc(p.name)}</b><small>${plural(es.length,"payment","payments")}${p.id===D.pid?" · open now":""}</small></span><span class="num">${money(sums(es).t)}</span></button>`}).join("")
       +`<span class="lbl">Rename “${esc(cur.name)}”</span><div class="tools"><input class="field" id="pj-r" value="${esc(cur.name)}" autocomplete="off"><button class="fbtn" id="pj-rs">Save</button></div>
       <span class="lbl">Start a new project</span><div class="tools"><input class="field" id="pj-n" placeholder="e.g. Second floor rent flat" autocomplete="off"><button class="fbtn" id="pj-ns">Create</button></div>
-      <p class="hint">Each project has its own entries and totals. Items and contacts are shared.</p>
+      <p class="hint">Each project has its own payments and totals. Items and contacts are shared.</p>
       ${D.projects.length>1&&!D.entries.some(e=>e.projectId===cur.id)?'<button class="danger" id="pj-del">Delete this empty project</button>':""}`;
     $$("[data-p]",s.body).forEach(b=>b.addEventListener("click",()=>{switchProject(b.dataset.p);s.close()}));
     $("#pj-rs",s.body).addEventListener("click",async()=>{const n=$("#pj-r",s.body).value.trim();if(!n){toast("Type a name");return}

@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
+const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups } = require('./env.cjs');
 (async () => {
   const browser = await chromium.launch(); const r = {}, errors = [];
   for (const dark of [false, true]) {
@@ -20,10 +20,10 @@ const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
       });
       await page.reload(); await page.waitForSelector('#boot', { state: 'detached' });
       r.quick = await page.$$eval('#addform [data-f="vendorSug"] .chip', b => b.map(x => x.textContent));
-      await page.selectOption('#addform select[data-g="material"]', 'brick');
+      await pickItem(page,'brick');
       r.quickBricks = await page.$$eval('#addform [data-f="vendorSug"] .chip', b => b.map(x => x.textContent));
-      r.caption = await page.$$eval('#addform .gs', g => g.map(x => (x.querySelector('small')?.textContent || '-') + '|' + x.querySelector('select').selectedOptions[0].textContent));
-      await page.selectOption('#addform select[data-g="material"]', '');
+      r.caption = await page.$eval('#addform [data-f="itemTxt"]', x => x.textContent);
+      await pickItem(page,'');
       await page.fill('#addform [data-f="vendor"]', 'a');
       r.typedA = await page.$$eval('#addform [data-f="vendorSug"] .chip', b => b.map(x => x.textContent));
       await page.fill('#addform [data-f="vendor"]', '');

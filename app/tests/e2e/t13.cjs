@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
+const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups } = require('./env.cjs');
 const fs = require('fs');
 (async () => {
   const browser = await chromium.launch(); const r = {}, errors = [];
@@ -9,9 +9,9 @@ const fs = require('fs');
   await page.goto('http://localhost:8090/?t=' + Date.now()); await page.waitForSelector('#boot', { state: 'detached' });
   const F = n => `#addform [data-f="${n}"]`;
   // create contacts via payments without deals first
-  await page.fill(F('amount'), '200000'); await page.selectOption('#addform select[data-g="people"]', 'thekedar'); await page.fill(F('vendor'), 'Ramesh Thekedar'); await page.fill(F('phone'), '9893000000');
+  await page.fill(F('amount'), '200000'); await pickItem(page,'thekedar'); await page.fill(F('vendor'), 'Ramesh Thekedar'); await page.fill(F('phone'), '9893000000');
   await page.click(F('save')); await page.waitForTimeout(300);
-  await page.fill(F('amount'), '25000'); await page.selectOption('#addform select[data-g="people"]', 'engineer'); await page.fill(F('vendor'), 'Civil Er. Priya');
+  await page.fill(F('amount'), '25000'); await pickItem(page,'engineer'); await page.fill(F('vendor'), 'Civil Er. Priya');
   await page.click(F('save')); await page.waitForTimeout(300);
   // summary hint
   await page.click('nav [data-go="sum"]'); r.sumHint = (await page.textContent('#deals')).slice(0, 60);
