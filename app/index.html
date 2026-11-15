@@ -68,6 +68,7 @@
     </div>
     <div class="card" id="welcome" hidden></div>
     <div class="notice" id="catnote" hidden></div>
+    <div class="card" id="duecard" hidden></div>
     <div class="card" id="installcard" hidden>
       <h2>Install on this phone</h2>
       <p class="pmeta" style="margin:0">Adds Property Estimates to your home screen. It then opens like a normal app and works without internet.</p>
@@ -95,6 +96,7 @@
           <option value="person">Shop or person</option>
         </select>
       </div>
+      <input class="field bsearch" type="search" id="bsearch" placeholder="Search item, person, note or amount" autocomplete="off" aria-label="Search payments">
       <div class="ftags" id="ftags"></div>
       <div class="sumstrip">
         <div>Spent<span class="num" id="b-total">₹0</span></div>
@@ -133,9 +135,11 @@
 
   <section id="v-sum" hidden>
     <div class="card" id="dealcard"><h2>Deals and balances</h2><div id="deals"></div></div>
+    <div class="card" id="sqftcard"><h2>Cost per sq ft</h2><div id="sqft"></div></div>
     <div class="card viz"><h2>Total cost</h2><div id="costsplit"></div>
       <span class="lbl" style="margin-top:14px">Share of total</span>
       <div class="gbar" id="gbar" role="img"></div><div class="lg" id="glegend"></div></div>
+    <div class="card" id="matcard" hidden><h2>Material bought</h2><div id="materials"></div></div>
     <div class="card viz">
       <div class="phead"><h2 style="margin:0">Spending by month</h2><button class="linkbtn" id="mtoggle">Show table</button></div>
       <div class="chartwrap" id="mchart" style="margin-top:14px"></div>

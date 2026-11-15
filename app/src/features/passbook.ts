@@ -12,6 +12,7 @@ import { rowHTML, sums } from "../ui/rows";
 import { ask, openSheet } from "../ui/sheets";
 
 export const PB={limit:150};
+$("#bsearch").addEventListener("input",()=>{PB.limit=150;renderBook()});
 export const personKey=e=>(e.vendor||"").trim().toLowerCase();
 export function bounds(f){
   const now=new Date(),day=864e5,sod=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
@@ -103,8 +104,18 @@ export function openFilters(){
   q("clear").addEventListener("click",()=>{Object.assign(w,blankF());["from","to","min","max"].forEach(k=>q(k).value="");paint()});
   paint();
 }
+/** search box: item, group, person (incl. extra people), note, deal, unit, or an amount like 15150 / 15,150 */
+export function matchQ(e,q){
+  const t=q.trim().toLowerCase();if(!t)return true;
+  const num=t.replace(/[₹,\s]/g,"");
+  if(/^\d+(\.\d+)?$/.test(num)&&String(e.amount).includes(num))return true;
+  const dl=e.dealId&&D.deals.find(d=>d.id===e.dealId);
+  const hay=[itemName(e),AS.GM.get(AS.IM.get(e.item)?.cat)?.n,e.vendor,e.note,e.unit,dl?.title,e.amount,e.rate,e.qty,...othersOf(e).map(o=>AS.CM.get(o.contactId)?.name)].filter(Boolean).join(" ").toLowerCase();
+  return t.split(/\s+/).every(w=>hay.includes(w));
+}
 export function renderBook(){
-  const list=applyF(AS.LIVE,AS.F);
+  const q=($("#bsearch").value||"").trim();
+  const list=applyF(AS.LIVE,AS.F).filter(e=>matchQ(e,q));
   const tags=filterTags();
   $("#fcount").hidden=!tags.length;$("#fcount").textContent=tags.length;
   $("#ftags").innerHTML=tags.map(([l],i)=>`<button class="ftag" data-t="${i}" aria-label="Remove filter ${esc(l)}">${esc(l)} <i>×</i></button>`).join("")
@@ -118,11 +129,11 @@ export function renderBook(){
   list.sort(cmp);
   const t=sums(list);
   $("#b-total").textContent=money(t.t);$("#b-words").textContent=list.length?"Spent: "+inWords(t.t):"";$("#b-cash").textContent=money(t.c);$("#b-online").textContent=money(t.o);
-  $("#b-count").textContent=list.length?`${plural(list.length,"payment","payments")}${s.startsWith("date")?". Running total shown under each amount.":""}`:"";
+  $("#b-count").textContent=list.length?`${plural(list.length,"payment","payments")}${q?` matching “${q}”`:""}${s.startsWith("date")?". Running total shown under each amount.":""}`:"";
   const showBal=s.startsWith("date");
   $("#book").classList.toggle("selecting",!!PB.sel);
   $("#book").innerHTML=list.length?list.slice(0,PB.limit).map(e=>rowHTML(e,showBal?run[e.id]:null,PB.sel?PB.sel.has(e.id):null,true)).join("")
-    :`<li class="empty">${AS.LIVE.length?"No payments match these filters.":"No payments yet. Add your first one from the Add tab."}</li>`;
+    :`<li class="empty">${AS.LIVE.length?(q?`Nothing matches “${esc(q)}”.`:"No payments match these filters."):"No payments yet. Add your first one from the Add tab."}</li>`;
   $("#bookmore").hidden=list.length<=PB.limit;
   PB.list=list;
   $$(".entry",$("#book")).forEach(b=>{longPress(b,()=>{if(PB.sel)return;PB.sel=new Set([b.dataset.id]);PB.lpAt=Date.now();try{navigator.vibrate&&navigator.vibrate(15)}catch{}renderBook()});

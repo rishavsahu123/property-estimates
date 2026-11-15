@@ -98,6 +98,13 @@ Finishing the type-checking of the code (the rest of Phase 1) happens inside the
 
 ## Done log
 
+- 15 Nov 2026 (v2.12.0), P1 features done:
+  - **B1:** passbook search box (item, group, person, extra people, note, deal, unit, amount, rate, quantity; several words must all match).
+  - **B4:** "Material bought" card in Summary (quantity, average per unit, number of purchases, last rate and date).
+  - **B6:** "Due now" card on Home: overdue deals and earned-but-unpaid salary; tap to pay, with the amount prefilled.
+  - **B8:** "Cost per sq ft" card in Summary. The built-up area is saved on the project (`area`). It shows construction so far, everything so far, and the expected cost when deals are paid.
+  - **B10:** person page → "Statement (share or PDF)": This month / Last month / Last 3 months / This year / All time / Custom; share as a receipt image (past payments off) or a PDF.
+
 - 15 Nov 2026 (v2.11.0), Track A done:
   - **A1:** the top-bar All/Construction/Documents dropdown is now an always-visible segmented switch (yellow when not All).
   - **A2:** one "What was it for?" picker, with search, groups as headings, + New item per group, "Add “x” as a new item", and recent-item chips under the button.

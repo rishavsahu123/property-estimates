@@ -114,7 +114,7 @@ export function openReceipt(ids,force={}){
   const slips=es.filter(e=>attachCount(e));
   const nAtt=es.reduce((a,e)=>a+attachCount(e),0);
   const dealOk=es.every(e=>e.dealId&&e.dealId===es[0].dealId)&&D.deals.some(d=>d.id===es[0].dealId);
-  const opt={history:single&&lget("pe-rc-hist",true),slips:slips.length>0&&lget("pe-rc-slips",true),deal:dealOk&&(force.deal??lget("pe-rc-deal",false))};
+  const opt={history:single&&(force.history??lget("pe-rc-hist",true)),slips:slips.length>0&&lget("pe-rc-slips",true),deal:dealOk&&(force.deal??lget("pe-rc-deal",false))};
   // every option is always shown on one line; the ⓘ explains it (hover on desktop, tap on phone)
   const optRow=(id,on,ok,label,info,why)=>`<div class="rcopt${ok?"":" off"}"><label class="check"><input type="checkbox" id="${id}"${on?" checked":""}${ok?"":" disabled"}><span>${label}</span></label><small class="rch">${esc(ok?info:why)}</small></div>`;
   const s=openSheet("Share receipt",`

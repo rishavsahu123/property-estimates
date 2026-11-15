@@ -1,11 +1,13 @@
 // @ts-nocheck
+import { dbPut } from "../data/db";
+import { openSheet } from "../ui/sheets";
 // Summary: totals, deals and balances, charts.
 import { KINDS } from "../lib/constants";
-import { esc, money, numfmt, MON, round2, perUnit, plural } from "../lib/format";
+import { esc, money, numfmt, MON, round2, perUnit, plural, pnum, fdate } from "../lib/format";
 import { isMonthly, dealAgreed, dealFormula, balText } from "../lib/deals";
 import { initials, openPerson } from "./people";
-import { AS, D, dealBal, dealInView, dealPaid, dueText, gName, groupOf, itemName, kindOf, projDeals, viewGroups } from "../state";
-import { $, $$, lget, lset } from "../ui/dom";
+import { AS, D, dealBal, dealInView, dealPaid, dueText, gName, groupOf, itemName, kindOf, projDeals, viewGroups, proj, emit } from "../state";
+import { $, $$, lget, lset, toast } from "../ui/dom";
 import { sums } from "../ui/rows";
 
 export function renderSummary(){
@@ -26,8 +28,44 @@ export function renderSummary(){
     html+=gs.map(g=>`<div class="trow"><span>${esc(g.name)}</span><span class="num">${money(g.amt)}</span><span class="s">${plural(g.n,"payment","payments")}${g.qtext?". "+esc(g.qtext):""}</span></div>`).join("");
   });
   $("#byitem").innerHTML=html||'<p class="empty">Totals appear here once you add payments.</p>';
-  renderGroupBar(es,t.t);renderMonthly(es);renderDeals(t.t);
+  renderGroupBar(es,t.t);renderMonthly(es);renderDeals(t.t);renderMaterials(es);renderSqft(es,t.t);
 }
+// "bag" → "bags" for counts above 1 (kg, cu ft and the like stay as they are)
+const unitsWord=(u,q)=>q!==1&&/^(bag|piece|ton|trolley|quintal|tanker|trip|coil|box|sheet|metre|meter|litre|liter|load|truck)$/i.test(u)?u+"s":u;
+// quantity bought per item and unit, with the average and the latest rate
+export function renderMaterials(es){
+  const m=new Map();
+  for(const e of es){if(!(e.qty>0)||!e.unit||!e.item)continue;const k=e.item+"|"+e.unit;
+    const g=m.get(k)||{name:itemName(e),unit:e.unit,q:0,amt:0,n:0,last:null};g.q+=+e.qty;g.amt+=+e.amount||0;g.n++;if(!g.last||e.ts>g.last.ts)g.last=e;m.set(k,g)}
+  const rows=[...m.values()].sort((a,b)=>b.amt-a.amt);
+  $("#matcard").hidden=!rows.length;if(!rows.length)return;
+  $("#materials").innerHTML=rows.map(g=>{const avg=g.q?g.amt/g.q:0,lr=g.last.rate||(g.last.qty?g.last.amount/g.last.qty:0);
+    return `<div class="trow"><span>${esc(g.name)}<br><small class="pmeta">${numfmt.format(round2(g.q))} ${esc(unitsWord(g.unit,g.q))} · average ${money(round2(avg))} per ${esc(perUnit(g.unit))}</small></span><span class="num">${money(g.amt)}</span>
+      <span class="s">${plural(g.n,"purchase","purchases")} · last ${money(round2(lr))} per ${esc(perUnit(g.unit))} on ${fdate(g.last.ts)}</span></div>`}).join("");
+}
+// cost per sq ft of built-up area (area is saved on the project)
+export function renderSqft(es,spent){
+  const box=$("#sqft"),card=$("#sqftcard"),p=proj();
+  card.hidden=AS.VIEW==="documents";if(card.hidden)return;
+  const area=+p?.area||0;
+  if(!area){box.innerHTML=`<p class="hint" style="margin:0 0 8px">Enter the built-up area (all floors) to see what the house costs per sq ft.</p>
+    <div class="row"><input class="field" id="sq-a" inputmode="decimal" placeholder="Built-up area, e.g. 7000" aria-label="Built-up area in sq ft"><button class="second" id="sq-save" style="margin-top:0">Save</button></div>`;
+    $("#sq-save").addEventListener("click",()=>saveArea(pnum($("#sq-a").value)));return}
+  const k=kindTotals(es),con=AS.VIEW==="all"?k.construction:spent;
+  const open=round2(projDeals().filter(d=>dealInView(d)&&!d.closed).reduce((a,d)=>a+Math.max(dealBal(d),0),0));
+  const per=v=>money(Math.round(v/area));
+  box.innerHTML=`<p class="pmeta" style="margin:0 0 4px">Built-up area ${numfmt.format(area)} sq ft · <button class="linkbtn" id="sq-ch">Change</button></p>
+    <div class="trow"><span>Construction so far<br><small class="pmeta">${money(con)} ÷ ${numfmt.format(area)} sq ft</small></span><span class="num">${per(con)}</span></div>
+    ${AS.VIEW==="all"&&k.documents+k.unknown>0?`<div class="trow"><span>Everything so far<br><small class="pmeta">including land, documents and unsorted</small></span><span class="num">${per(spent)}</span></div>`:""}
+    ${open>0?`<div class="trow total"><span>Expected when deals are paid<br><small class="pmeta">${AS.VIEW==="all"?"everything":"construction"} + ${money(open)} still to pay on deals</small></span><span class="num">${per((AS.VIEW==="all"?spent:con)+open)}</span></div>`:""}`;
+  $("#sq-ch").addEventListener("click",async()=>{const v=await askArea(area);if(v!=null)saveArea(v)});
+}
+function askArea(cur){return new Promise(res=>{const s=openSheet("Built-up area",`<label class="lbl" for="sq-in" style="margin-top:0">Total built-up area of all floors, in sq ft</label>
+  <input class="field" id="sq-in" inputmode="decimal" value="${cur||""}"><button class="primary" id="sq-ok">Save</button>`);
+  s.onClose=()=>res(null);$("#sq-ok",s.body).addEventListener("click",()=>{const v=pnum($("#sq-in",s.body).value);s.onClose=null;s.close();res(v)})})}
+async function saveArea(v){
+  const p=proj();if(!p)return;if(!(v>0)){toast("Enter the area in sq ft, for example 7000");return}
+  const n={...p,area:v};await dbPut("projects",n);D.projects[D.projects.findIndex(x=>x.id===n.id)]=n;emit();toast("Area saved")}
 export const paintTheme=()=>$$("#theme button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.theme===lget("pe-theme","auto"))));
 export function renderDeals(spent){
   const ds=projDeals().filter(dealInView);

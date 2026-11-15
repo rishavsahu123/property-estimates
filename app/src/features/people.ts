@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { pdfOfEntries } from "./export";
 // People and Deals tabs, person page, contact form.
 import { esc, money, fdate, round2, cleanPhone, newId, plural, inWords } from "../lib/format";
 import { dealAgreed, balText } from "../lib/deals";
@@ -84,7 +85,7 @@ export function openPerson(id){
       <div>Paid<span class="num">${money(t.t)}</span></div><div>Cash<span class="num">${money(t.c)}</span></div><div>Online<span class="num">${money(t.o)}</span></div></div>
     <p class="count" style="font-style:italic">${esc(inWords(t.t))}</p>
     <p class="count">${plural(es.length,"payment","payments")}, ${fdate(es[es.length-1].ts)} to ${fdate(es[0].ts)}</p>
-    <button class="primary" data-p="share">Share statement</button>
+    <button class="primary" data-p="share">Statement (share or PDF)</button>
     <button class="second" data-p="book">Show in passbook</button>
     ${ds.length?`<span class="lbl" style="margin-top:14px">Other payments <span style="font-size:12px">(not in any deal)</span></span>`:""}
     ${other.length?`<ul class="book" style="margin-top:${ds.length?0:10}px">${other.map(e=>rowHTML(e,null,null,false,{noVendor:true})).join("")}</ul>`:ds.length?'<p class="hint" style="margin:0">All payments are counted in a deal.</p>':""}`
@@ -94,9 +95,36 @@ export function openPerson(id){
     $("[data-p=pay]",s.body).addEventListener("click",()=>openPaySheet({contact:c}));
     $("[data-p=adddeal]",s.body).addEventListener("click",()=>openDealForm(null,{contactId:c.id}));
     bindDeals(s.body);
-    const sh=$("[data-p=share]",s.body);if(sh)sh.addEventListener("click",()=>openReceipt([es[0].id]));
+    const sh=$("[data-p=share]",s.body);if(sh)sh.addEventListener("click",()=>openStatement(c));
     const bk=$("[data-p=book]",s.body);if(bk)bk.addEventListener("click",()=>{AS.F=blankF();AS.F.people=[personKey(es[0])];PB.limit=150;s.close();go("book")});
     $$(".entry",s.body).forEach(b=>b.addEventListener("click",()=>openView(b.dataset.id)));
+  };
+  s.refresh=paint;paint();
+}
+/** statement for one person over a period: share as a receipt image or as a PDF */
+export function openStatement(c){
+  const all=AS.LIVE.filter(e=>e.contactId===c.id);
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth();
+  const R=[["month","This month",new Date(y,m,1),null],["last","Last month",new Date(y,m-1,1),new Date(y,m,0,23,59,59)],["3m","Last 3 months",new Date(y,m-2,1),null],
+    ["year","This year",new Date(y,0,1),null],["all","All time",null,null],["custom","Custom dates",null,null]];
+  let pick=lget("pe-st-range","all");if(!R.some(r=>r[0]===pick))pick="all";
+  const s=openSheet(`Statement · ${c.name}`,"");
+  const paint=()=>{
+    const r=R.find(x=>x[0]===pick);let a=r[2],b=r[3];
+    if(pick==="custom"){const f=$("#st-f",s.body)?.value,t=$("#st-t",s.body)?.value;a=f?new Date(f+"T00:00:00"):null;b=t?new Date(t+"T23:59:59"):null}
+    const list=all.filter(e=>(!a||e.ts>=+a)&&(!b||e.ts<=+b));
+    const label=pick==="custom"?[a&&fdate(a),b&&fdate(b)].filter(Boolean).join(" to ")||"All time":r[1];
+    const keepF=$("#st-f",s.body)?.value||"",keepT=$("#st-t",s.body)?.value||"";
+    s.body.innerHTML=`<div class="chips">${R.map(([k,l])=>`<button type="button" class="chip" data-sr="${k}" aria-pressed="${k===pick}">${l}</button>`).join("")}</div>
+      <div class="row" id="st-cw" style="margin-top:8px"${pick==="custom"?"":" hidden"}><label><small>From</small><input type="date" class="field" id="st-f" value="${keepF}"></label><label><small>To</small><input type="date" class="field" id="st-t" value="${keepT}"></label></div>
+      <div class="sumstrip"><div>Paid<span class="num">${money(sums(list).t)}</span></div><div>Payments<span class="num">${list.length}</span></div><div>Period<span style="font-size:14px;display:block;margin-top:6px">${esc(label)}</span></div></div>
+      <button class="primary" id="st-img"${list.length?"":" disabled"}>Share as receipt image</button>
+      <button class="second" id="st-pdf"${list.length?"":" disabled"}>Download PDF</button>
+      ${list.length?"":`<p class="hint">No payments to ${esc(c.name)} in this period.</p>`}`;
+    $$("[data-sr]",s.body).forEach(x=>x.addEventListener("click",()=>{pick=x.dataset.sr;lset("pe-st-range",pick);paint()}));
+    ["#st-f","#st-t"].forEach(id=>$(id,s.body).addEventListener("change",paint));
+    $("#st-img",s.body).addEventListener("click",()=>openReceipt(list.map(e=>e.id),{history:false}));
+    $("#st-pdf",s.body).addEventListener("click",()=>{s.close();pdfOfEntries(list,`Statement · ${c.name} · ${label}`)});
   };
   s.refresh=paint;paint();
 }

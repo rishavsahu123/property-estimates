@@ -1,6 +1,18 @@
 # Roadmap — Property Estimates on the app stores
 
-Last updated: 15 Nov 2026
+Last updated: 15 Nov 2026 (Play Store first)
+
+## Developer / studio (decided 15 Nov 2026)
+- Studio name: **Hurdle Labs** ("apps that remove everyday hurdles"). It is used for the Play developer name, and later the company (proprietorship, then possibly Pvt Ltd).
+- One dedicated Gmail (for example hurdlelabs@gmail.com) for Play Console, Google Cloud and RevenueCat, with 2-step verification on.
+- Play account type: **Personal** for now (each new app needs a closed test with at least 12 testers for 14 days). Later, an Organization account once the business is registered (it can't be converted, so it would be a new account).
+- Before finalising, check: Gmail, hurdlelabs.in/.com, the Play developer name, and an IP India trademark search.
+
+## Where we sell (decided 15 Nov 2026)
+- **Now: Google Play Store only**, using **Google Play Billing** (UPI AutoPay and cards, trials, renewals and cancellation are all handled by Google). Purchase checks go through RevenueCat (free up to $2,500 a month of revenue). No Razorpay, no KYC, no payment server.
+- **Website (GitHub Pages):** stays live, with the free features; paid features show "Get the app on Play Store".
+- **Later (once Play earns money):** website payments with Razorpay (about 3.5% fee vs 15% on Play), Razorpay KYC, a Cloudflare Worker for licences and webhooks, and a `.in` domain. After that, the iPhone app ($99 a year Apple account).
+- **Costs now:** $25 one-time Play developer account. Hosting, server, Drive and RevenueCat (to start) are ₹0. The domain is optional.
 
 ## Business model (decided 15 Nov 2026; replaces earlier versions)
 

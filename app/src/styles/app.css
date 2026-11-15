@@ -68,6 +68,10 @@ button{cursor:pointer}
 .viewseg button{padding:7px 2px;font-size:14px}
 .viewseg.on{border-color:var(--tape)}
 .viewseg.on button[aria-pressed="true"]{background:var(--tape);color:var(--tape-ink);font-weight:600}
+.bsearch{margin-top:8px}
+.duetot{font-size:26px;color:var(--debit)}
+#duecard .av{background:var(--warn-bg);color:var(--warn-ink);font-weight:700}
+#duecard .av.late{background:var(--debit);color:var(--card)}
 .toast.bad{background:var(--debit);color:var(--card);cursor:pointer}
 .toast.bad::after{content:"  ✕";opacity:.8}
 .projbtn svg{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2.2}

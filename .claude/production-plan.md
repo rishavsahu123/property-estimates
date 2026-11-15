@@ -91,7 +91,17 @@ Status: **approved 2 Nov 2026.** Phase 0 done. Phase 1 in progress (milestone 1 
 - Turn backup off, and confirm no upload happens.
 - The schedule is respected, and the app still works offline.
 
-## Phase 3 — Subscription (Razorpay now, Play Billing later)
+## Phase 3 — Subscription (Play Store + Play Billing now; Razorpay website later)
+
+**Decided 15 Nov 2026: Play Store first.**
+- Wrap the app for Android (Capacitor, or a TWA), with the same code as the website.
+- Google Play Billing for Basic, Royal and the add-ons, plus the 30-day Royal trial offer.
+- RevenueCat checks purchases and trials and gives the app an offline entitlement cache, with 3 days of grace.
+- Repeat trials: Google allows one trial per Google account, and we also store a hash of `ANDROID_ID` in RevenueCat attributes.
+- The Razorpay / Cloudflare flow below is kept for the **future website version** (built once Play earns money).
+- **Your part now:**
+  - Google Play Developer account ($25 one-time, identity verification).
+  - Later: create the subscription products in the Play Console with my steps, and a RevenueCat account (free).
 
 **Model (decided 15 Nov 2026):** Free / Basic / Royal / Custom add-ons. The full table is in `roadmap.md` → Business model.
 
@@ -136,8 +146,8 @@ Phone app stores the licence and checks the signature OFFLINE with a built-in pu
 
 **Your part:**
 
-1. **Razorpay account plus KYC** (PAN, bank account; usually 1–3 days). Turn on Subscriptions, create plans for Basic ₹29 a month, Royal ₹59 a month and ₹499 a year, and one plan for each add-on (the 30-day trial is handled by our server), and give me the **test** key ID. The secret goes only into Cloudflare, never into the app.
-2. **Cloudflare account** (free). I give you the Worker code and a one-page setup guide. You paste the secrets into Cloudflare settings.
+1. *(Future website version)* **Razorpay account plus KYC** (PAN, bank account; usually 1–3 days). Turn on Subscriptions, create plans for Basic ₹29 a month, Royal ₹59 a month and ₹499 a year, and one plan for each add-on (the 30-day trial is handled by our server), and give me the **test** key ID. The secret goes only into Cloudflare, never into the app.
+2. *(Future website version)* **Cloudflare account** (free). I give you the Worker code and a one-page setup guide. You paste the secrets into Cloudflare settings.
 3. Test with Razorpay **test mode** first, then switch to live keys.
 
 **What I can and can't test:** I build everything with fake Google and Razorpay responses and test all the cases (trial, paid, expired, offline, clock rollback, cancel). You do the real end-to-end run in test mode.

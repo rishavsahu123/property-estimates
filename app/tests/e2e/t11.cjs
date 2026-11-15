@@ -35,6 +35,7 @@ const { OUT, SERVE, DIST, FIX } = require('./env.cjs');
       r.pills = await page.$$eval('.sheet .pill', b => b.map(x => x.textContent.trim() + (x.href ? ' ' + x.getAttribute('href') : '')));
       r.rows = await page.$$eval('.sheet .entry', b => b.length);
       await page.click('.sheet [data-p="share"]');
+      await page.click('[data-sr="all"]'); await page.click('#st-img');
       await page.waitForFunction(() => { const i = document.querySelector('#rc-img'); return i && i.complete && i.naturalWidth > 0 });
       const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#rc-save')]); await dl.saveAs('n-statement.png');
       await page.evaluate(() => document.querySelectorAll('.sheet-bg').forEach(x => x.remove()));
