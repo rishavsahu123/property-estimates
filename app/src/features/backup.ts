@@ -13,11 +13,15 @@ import { $, lset, toast } from "../ui/dom";
 import { ask } from "../ui/sheets";
 import { closeMenus, task } from "../ui/topbar";
 
+/** the whole app (all projects, people, deals, payments, photos and files) as one JSON text */
+export async function buildBackupJSON(){
+  const slips={};
+  for(const e of D.entries){for(const k of [e.slipKey,...filesOf(e).map(x=>x.key)]){if(k&&!slips[k]){const b=await dbGet("slips",k);if(b)slips[k]=await blobToData(b)}}}
+  return JSON.stringify({app:APP,version:3,savedAt:Date.now(),projects:D.projects,contacts:D.contacts,groups:D.groups,catalog:D.items,deals:D.deals,entries:D.entries,slips});
+}
 $("#backup").addEventListener("click",()=>task("Preparing backup…",async()=>{
   try{
-    const slips={};
-    for(const e of D.entries){for(const k of [e.slipKey,...filesOf(e).map(x=>x.key)]){if(k&&!slips[k]){const b=await dbGet("slips",k);if(b)slips[k]=await blobToData(b)}}}
-    const data=JSON.stringify({app:APP,version:3,savedAt:Date.now(),projects:D.projects,contacts:D.contacts,groups:D.groups,catalog:D.items,deals:D.deals,entries:D.entries,slips});
+    const data=await buildBackupJSON();
     const ok=await giveFile(`property-estimates-backup-${localDay()}.json`,new Blob([data],{type:"application/json"}));
     if(ok){lset("ghk-backup",Date.now());backupNote();toast("Backup ready")}
   }catch(err){console.error(err);toast("Couldn’t make the backup. Try again.")}
@@ -25,14 +29,18 @@ $("#backup").addEventListener("click",()=>task("Preparing backup…",async()=>{
 $("#restorebtn").addEventListener("click",()=>{closeMenus();$("#restorefile").click()});
 $("#restorefile").addEventListener("change",async ev=>{
   const file=ev.target.files[0];ev.target.value="";if(!file)return;
+  let d;try{d=JSON.parse(await file.text())}catch{toast("That file isn’t a Property Estimates backup.");return}
+  await restoreData(d);
+});
+/** merge a backup into this phone (asks first). Returns true when something was restored. */
+export async function restoreData(d,{from=""}={}){
   const bad="That file isn’t a Property Estimates backup.";
-  let d;try{d=JSON.parse(await file.text())}catch{toast(bad);return}
-  if(!d||!OLD_APPS.includes(d.app)||!Array.isArray(d.entries)){toast(bad);return}
+  if(!d||!OLD_APPS.includes(d.app)||!Array.isArray(d.entries)){toast(bad);return false}
   const newProjects=(Array.isArray(d.projects)?d.projects:[]).filter(p=>p&&p.id&&p.name&&!D.projects.some(x=>x.id===p.id));
   const have=new Map(D.entries.map(e=>[e.id,e]));
   const incoming=d.entries.filter(e=>e&&e.id&&(!have.has(e.id)||(e.updatedAt||0)>(have.get(e.id).updatedAt||0)));
   const msg=`Restore ${plural(incoming.length,"payment","payments")}${newProjects.length?` and ${plural(newProjects.length,"project","projects")}`:""} from this backup?`;
-  if(!await ask(msg,"Payments already on this phone are kept.",{ok:"Restore"}))return;
+  if(!await ask(msg,`${from?from+". ":""}Payments already on this phone are kept.`,{ok:"Restore"}))return false;
   try{
     const freshPhone=!D.entries.length;
     if(freshPhone&&newProjects.length){
@@ -67,5 +75,6 @@ $("#restorefile").addEventListener("change",async ev=>{
     D.entries=await dbAll("entries");D.projects.sort((a,b)=>a.createdAt-b.createdAt);
     if(!D.projects.some(p=>p.id===D.pid))D.pid=D.projects[0].id;
     emit();resetAdd();toast(`Restored ${plural(incoming.length,"payment","payments")}${newProjects.length&&!freshPhone?`. Switch projects from the name at the top.`:""}`);
-  }catch(err){console.error(err);toast("Restore stopped partway. Try again.")}
-});
+    return true;
+  }catch(err){console.error(err);toast("Couldn’t finish the restore. Try again.");return false}
+}

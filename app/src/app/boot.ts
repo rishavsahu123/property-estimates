@@ -38,6 +38,7 @@ window.addEventListener("unhandledrejection",ev=>onErr(ev.reason));
 export async function storageNote(){try{if(!navigator.storage||!navigator.storage.estimate)return"";const{usage,quota}=await navigator.storage.estimate();
   return usage?`Using ${fsize(usage)} on this phone${quota?` (${Math.max(1,Math.round(usage/quota*100))}% of the space the browser allows)`:""}.`:""}catch{return""}}
 
+import { autoBackup } from "../features/drive";
 // read-only handle for the end-to-end tests (state lives inside this module now)
 window.__pe={get D(){return D},get SHEETS(){return SHEETS},dealAgreed};
 
@@ -48,4 +49,7 @@ window.__pe={get D(){return D},get SHEETS(){return SHEETS},dealAgreed};
   rebuild();paintView();resetAdd();
   go(location.hash.slice(1)||"add");
   $("#boot").remove();
+  // Google Drive backup when it is due (quietly if Google still trusts this session, else a one-tap bar on Home)
+  autoBackup().catch(()=>{});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")autoBackup().catch(()=>{})});
 })();

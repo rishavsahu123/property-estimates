@@ -91,6 +91,8 @@ Status: **approved 2 Nov 2026.** Phase 0 done. Phase 1 in progress (milestone 1 
 - Turn backup off, and confirm no upload happens.
 - The schedule is respected, and the app still works offline.
 
+**Phase 2 status (15 Nov 2026): built and tested with a fake Google (v2.13.0). Real sign-in works only for test users added on the OAuth consent screen until it is Published.**
+
 ## Phase 3 — Subscription (Play Store + Play Billing now; Razorpay website later)
 
 **Decided 15 Nov 2026: Play Store first.**

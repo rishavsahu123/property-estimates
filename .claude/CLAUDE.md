@@ -48,6 +48,14 @@ Planned for Google Play / App Store later with a subscription (see roadmap.md).
 - Rule: keep every feature, remove every confusion. Fix existing problems before adding new ones.
 
 ## Features in place
+- v2.13.0 (Phase 2, Drive backup): src/features/drive.ts (strict TS) and src/lib/config.ts (GOOGLE_CLIENT_ID, scopes, folder "Property Estimates backups", keep 3).
+  - Google Identity Services token flow; the token is kept in sessionStorage for about 1 hour.
+  - Settings → "Google Drive backup" (`openDrive`): on by default, Daily/Weekly/Monthly/Only when I tap, Wi-Fi only, Back up now, last backup and size, restore, sign out.
+  - `autoBackup()` runs at start and when the app comes back: a quiet upload if the token is valid, otherwise the #drivedue bar on Home.
+  - A fresh phone offers restore right after sign-in.
+  - backup.ts exports `buildBackupJSON` and `restoreData(d,{from})`.
+  - t29 uses a fake Google (page.route) and needs no real account.
+  - Honest limit (web): automatic backup is quiet only within about 1 hour of sign-in. After that, a one-tap bar. The Play app will use native sign-in for truly automatic backups.
 - v2.12.0 (P1):
   - `matchQ` and `#bsearch` in passbook.ts.
   - `renderMaterials`, `renderSqft` and `askArea` in summary.ts (project.area).

@@ -45,7 +45,8 @@
         <span class="lbl">Backup</span>
         <p style="margin-top:0"><b>Your data stays on this phone.</b> If you uninstall the app or clear Chrome’s data, it’s gone. Keep a backup file on Google Drive or WhatsApp.</p>
         <p id="lastbackup"></p>
-        <div class="pact"><button type="button" class="linkbtn" id="set-backup">Back up now</button><button type="button" class="linkbtn" id="set-restore">Restore from a file</button></div>
+        <button type="button" class="setrow" id="set-drive"><span><b>Google Drive backup</b><small id="drivesum"></small></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+        <div class="pact"><button type="button" class="linkbtn" id="set-backup">Save a backup file</button><button type="button" class="linkbtn" id="set-restore">Restore from a file</button></div>
         <span class="lbl">Help</span>
         <p style="margin-top:0"><b>All, Construction, Documents</b> next to the project name filters the whole app. A yellow bar shows when only one is shown.</p>
         <p><b>Receipts:</b> hold a payment in Passbook to select, then Share receipt.</p>
@@ -68,6 +69,7 @@
     </div>
     <div class="card" id="welcome" hidden></div>
     <div class="notice" id="catnote" hidden></div>
+    <div class="notice" id="drivedue" hidden></div>
     <div class="card" id="duecard" hidden></div>
     <div class="card" id="installcard" hidden>
       <h2>Install on this phone</h2>

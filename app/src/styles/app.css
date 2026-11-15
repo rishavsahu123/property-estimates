@@ -72,6 +72,11 @@ button{cursor:pointer}
 .duetot{font-size:26px;color:var(--debit)}
 #duecard .av{background:var(--warn-bg);color:var(--warn-ink);font-weight:700}
 #duecard .av.late{background:var(--debit);color:var(--card)}
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;border:1.5px solid var(--rule);background:var(--field);border-radius:12px;padding:10px 12px;margin:2px 0 8px;color:var(--ink)}
+.setrow b{display:block;font-size:15px}
+.setrow small{display:block;font-size:12.5px;color:var(--muted);margin-top:1px}
+.setrow svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2}
+.dlist{margin:10px 0 0;padding-left:18px;font-size:14px;line-height:1.5;color:var(--muted)}
 .toast.bad{background:var(--debit);color:var(--card);cursor:pointer}
 .toast.bad::after{content:"  ✕";opacity:.8}
 .projbtn svg{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2.2}
