@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups } = require('./env.cjs');
+const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups, readBackup } = require('./env.cjs');
 const fs = require('fs');
 (async () => {
   const browser = await chromium.launch(); const r = {}, errors = [];
@@ -40,7 +40,7 @@ const fs = require('fs');
   await page.click('#openfilters'); await page.click('.sheet [data-fs="yes"]'); r.filterBtn = await page.textContent('.sheet [data-w="apply"]'); await page.click('.sheet .x');
   // backup + restore elsewhere
   await page.click('#m-down-b'); const [b] = await Promise.all([page.waitForEvent('download'), page.click('#backup')]); await b.saveAs('f-backup.json');
-  const bk = JSON.parse(fs.readFileSync('f-backup.json')); r.backup = { files: bk.entries[0].files.map(x => x.name), blobs: Object.keys(bk.slips).length };
+  const bk = readBackup('f-backup.json'); r.backup = { files: bk.entries[0].files.map(x => x.name), blobs: Object.keys(bk.slips).length };
   const p2 = await (await browser.newContext({ serviceWorkers: 'block', acceptDownloads: true })).newPage(); p2.on('dialog', d => d.accept()); p2.on('pageerror', e => errors.push('p2 ' + e.message));
   await p2.goto('http://localhost:8090/?t=' + Date.now()); await p2.waitForSelector('#boot', { state: 'detached' });
   await p2.setInputFiles('#restorefile', 'f-backup.json'); await p2.waitForTimeout(1200);

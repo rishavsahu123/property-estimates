@@ -35,12 +35,12 @@ function fakeGoogle() {
       return r.fulfill({ status: 200, headers: { Location: `https://www.googleapis.com/upload/session/${id}`, 'Access-Control-Expose-Headers': 'Location' }, body: '' });
     }
     if (url.pathname.startsWith('/upload/session/') && m === 'PUT') {
-      const id = url.pathname.split('/').pop(), f = files.get(id); f.body = req.postData(); f.size = String(f.body.length); log.push('upload');
+      const id = url.pathname.split('/').pop(), f = files.get(id); f.body = req.postDataBuffer(); f.size = String(f.body.length); log.push('upload');
       return r.fulfill({ json: { id, size: f.size } });
     }
     const one = url.pathname.match(/^\/drive\/v3\/files\/([^/]+)$/);
     if (one && m === 'DELETE') { files.delete(one[1]); log.push('delete'); return r.fulfill({ status: 204, body: '' }); }
-    if (one && m === 'GET' && url.searchParams.get('alt') === 'media') return r.fulfill({ status: 200, contentType: 'application/json', body: files.get(one[1]).body });
+    if (one && m === 'GET' && url.searchParams.get('alt') === 'media') return r.fulfill({ status: 200, contentType: 'application/octet-stream', body: files.get(one[1]).body });
     return r.fulfill({ status: 404, body: '{}' });
   }
   return { files, log, route };

@@ -11,6 +11,7 @@ import { paintTheme } from "../features/summary";
 import { AS, blankF, D, emit } from "../state";
 import { $, $$, lset, toast } from "./dom";
 import { driveSummary, openDrive } from "../features/drive";
+import { backupPassSummary, openBackupPassword } from "../features/backup";
 
 export function paintView(){
   $$("#viewseg [data-v]").forEach(b=>{const on=b.dataset.v===AS.VIEW;b.setAttribute("aria-pressed",String(on))});
@@ -23,13 +24,14 @@ $$("#viewseg [data-v]").forEach(b=>b.addEventListener("click",()=>{if(AS.VIEW===
 
 
 $("#set-drive").addEventListener("click",()=>{closeMenus();openDrive()});
+$("#set-bpass").addEventListener("click",()=>{closeMenus();openBackupPassword()});
 $("#set-backup").addEventListener("click",()=>{closeMenus();$("#backup").click()});
 $("#set-restore").addEventListener("click",()=>{closeMenus();$("#restorefile").click()});
 
 export const MENUS=[["m-down-b","m-down"],["m-up-b","m-up"],["m-info-b","m-info"]];
 export function closeMenus(except){MENUS.forEach(([b,m])=>{if(m!==except){$("#"+m).hidden=true;$("#"+b).setAttribute("aria-expanded","false")}})}
 MENUS.forEach(([b,m])=>$("#"+b).addEventListener("click",ev=>{ev.stopPropagation();const open=$("#"+m).hidden;closeMenus(m);
-  $("#"+m).hidden=!open;$("#"+b).setAttribute("aria-expanded",String(open));if(open&&m==="m-info"){backupNote();paintTheme();$("#drivesum").textContent=driveSummary();$("#appver").textContent=`Property Estimates ${__APP_VERSION__.replace(/^pe-v/,"v").replace(/-[a-z0-9]+$/,"")}`;storageNote().then(t=>{const el=$("#storeuse");if(el){el.textContent=t;el.hidden=!t}})}}));
+  $("#"+m).hidden=!open;$("#"+b).setAttribute("aria-expanded",String(open));if(open&&m==="m-info"){backupNote();paintTheme();$("#drivesum").textContent=driveSummary();backupPassSummary().then(t=>{$("#bpsum").textContent=t});$("#appver").textContent=`Property Estimates ${__APP_VERSION__.replace(/^pe-v/,"v").replace(/-[a-z0-9]+$/,"")}`;storageNote().then(t=>{const el=$("#storeuse");if(el){el.textContent=t;el.hidden=!t}})}}));
 document.addEventListener("click",ev=>{if(!ev.target.closest(".menu"))closeMenus()});
 document.addEventListener("keydown",ev=>{if(ev.key==="Escape")closeMenus()});
 let busy=false;

@@ -1,6 +1,6 @@
 {
   "name": "property-estimates",
-  "version": "2.13.0",
+  "version": "2.14.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,6 +15,9 @@
     "playwright": "^1.63.0",
     "typescript": "^5.9.3",
     "vite": "^6.4.5",
-    "vitest": "^3.2.7"
+    "vitest": "^4.1.12"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3"
   }
 }

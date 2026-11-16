@@ -5,15 +5,15 @@ import { openGroups } from "./catalog";
 import { go } from "../app/nav";
 // Home: total card, recent entries, backup note.
 import { KINDS } from "../lib/constants";
-import { money, fdate, inWords, plural, esc } from "../lib/format";
+import { money, fdate, fdatetime, inWords, plural, esc } from "../lib/format";
 import { AS, D, projDeals, dealInView, dealBal, isLate, dueText } from "../state";
 import { $, lget, lset, $$ } from "../ui/dom";
 import { bindRows, rowHTML, sums } from "../ui/rows";
 
 export function backupNote(){
   const last=lget("ghk-backup",0),n=AS.LIVE.length;
-  $("#status").textContent=!n?"Everything is saved only on this phone.":last?`Saved on this phone. Last backup ${fdate(last)}.`:"Saved on this phone. No backup yet, save one from the download button at the top.";
-  $("#lastbackup").textContent=last?`Last backup: ${fdate(last)}`:"No backup taken yet.";
+  $("#status").textContent=!n?"Everything is saved only on this phone.":last?`Saved on this phone. Last backup ${fdatetime(last)}.`:"Saved on this phone. No backup yet, save one from the download button at the top.";
+  $("#lastbackup").textContent=last?`Last backup: ${fdatetime(last)}`:"No backup taken yet.";
 }
 
 // first steps for a new user; hides itself once done or closed

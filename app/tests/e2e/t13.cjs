@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups } = require('./env.cjs');
+const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups, readBackup } = require('./env.cjs');
 const fs = require('fs');
 (async () => {
   const browser = await chromium.launch(); const r = {}, errors = [];
@@ -66,7 +66,7 @@ const fs = require('fs');
   await page.evaluate(() => document.querySelectorAll('.sheet-bg').forEach(x => x.remove()));
   // backup has deals; excel & pdf build
   await page.click('#m-down-b'); const [b] = await Promise.all([page.waitForEvent('download'), page.click('#backup')]); await b.saveAs('d-backup.json');
-  r.backupDeals = JSON.parse(fs.readFileSync('d-backup.json')).deals.map(d => d.title + ':' + (d.rate ? d.rate + 'x' + d.qty : d.amount));
+  r.backupDeals = readBackup('d-backup.json').deals.map(d => d.title + ':' + (d.rate ? d.rate + 'x' + d.qty : d.amount));
   await page.waitForTimeout(400);
   await page.click('#m-down-b'); const [x] = await Promise.all([page.waitForEvent('download', { timeout: 20000 }), page.click('#excel')]); await x.saveAs('d.xlsx');
   await page.waitForTimeout(400);

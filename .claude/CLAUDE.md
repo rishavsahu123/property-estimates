@@ -31,8 +31,8 @@ Planned for Google Play / App Store later with a subscription (see roadmap.md).
   Agreed = product of number fields with mul=true (calc) or amount (fixed). Old "rate"/"terms" deals are converted
   on load by `normDeal`. Paid = sum of live entries with that dealId; balance = agreed − paid.
 - Old v1 data is upgraded on start (`upgradeLegacy`): "other" items become catalog items, vendor names become contacts.
-- Backup JSON: app "property-estimates", version 3, includes slips as data URLs. Restore also accepts the old
-  "ghar-ka-hisaab" app id.
+- Backup (v4, since 2.14.0): one .zip (fflate, lazy chunk) = data.json (version 4, `files` index key→{path,name,type}, `prefs`) + README.txt + files/<date>-<item>-<name>.<ext> (original photos/PDFs). With a backup password it is `.pebackup`: "PEENC1
+" + salt16 + iv12 + AES-256-GCM (PBKDF2-SHA256 310k), src/lib/crypto.ts. Password kept in IndexedDB meta "backup-pass". Restore also reads old v3 .json (slips as data URLs). File names carry date and time (stampName); every shown backup date uses fdatetime ("15 Nov 2026, 7:41 pm"). On a fresh phone restore also brings back theme, view and other PREF_KEYS (not pe-project).
 - localStorage keys: pe-project, pe-view, pe-theme, ghk-mode, ghk-backup.
 
 ## TypeScript app (Phase 1, in app/)
@@ -44,6 +44,7 @@ Planned for Google Play / App Store later with a subscription (see roadmap.md).
 
 ## Plans
 - `.claude/production-plan.md`: phases (TypeScript, Drive backup, subscription, release).
+- `.claude/future-plan.md`: everything still pending apart from billing and release (finish typing and tests, launch prep, P2/P3 features, future roadmap, the Drive encryption decision). Start here when asked what is pending.
 - `.claude/improvements.md`: Track A (remove confusion in existing screens) and Track B (new features, P1–P3), plus the suggested order. Use both files when asked "what is pending".
 - Rule: keep every feature, remove every confusion. Fix existing problems before adding new ones.
 
@@ -53,7 +54,7 @@ Planned for Google Play / App Store later with a subscription (see roadmap.md).
   - Settings → "Google Drive backup" (`openDrive`): on by default, Daily/Weekly/Monthly/Only when I tap, Wi-Fi only, Back up now, last backup and size, restore, sign out.
   - `autoBackup()` runs at start and when the app comes back: a quiet upload if the token is valid, otherwise the #drivedue bar on Home.
   - A fresh phone offers restore right after sign-in.
-  - backup.ts exports `buildBackupJSON` and `restoreData(d,{from})`.
+  - backup.ts exports `buildBackupFile` ({blob,name,size,encrypted,count}), `readBackupFile(blob)` and `restoreData(d,{from})`. Drive uploads the same zip / .pebackup.
   - t29 uses a fake Google (page.route) and needs no real account.
   - Honest limit (web): automatic backup is quiet only within about 1 hour of sign-in. After that, a one-tap bar. The Play app will use native sign-in for truly automatic backups.
 - v2.12.0 (P1):
@@ -109,3 +110,5 @@ validated categorical palette, with the slot picked by the group's position.
   `git add . && git commit && git push origin main`.
 - Don't use `git checkout`, `git restore` or `git stash` on uncommitted work.
 - Receipts never show "made on" dates or app branding (old entries are often added later).
+
+- v2.14.0: ZIP backup with real files, optional backup password (Settings → Backup password, #set-bpass), date + time on all backups, settings restored on a fresh phone. e2e t30 (30 tests).

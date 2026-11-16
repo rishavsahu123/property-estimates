@@ -98,6 +98,13 @@ Finishing the type-checking of the code (the rest of Phase 1) happens inside the
 
 ## Done log
 
+- 15 Nov 2026 (v2.14.0), done:
+  - Backup is one .zip: data.json, README and every photo/PDF as the original file.
+  - Optional backup password (AES-256-GCM), for the file and Google Drive; wrong password asks again.
+  - Date and time on backup names and everywhere a backup is shown.
+  - Restore on a fresh phone brings back theme, view and settings.
+  - Old .json backups still restore.
+
 - 15 Nov 2026 (v2.12.0), P1 features done:
   - **B1:** passbook search box (item, group, person, extra people, note, deal, unit, amount, rate, quantity; several words must all match).
   - **B4:** "Material bought" card in Summary (quantity, average per unit, number of purchases, last rate and date).

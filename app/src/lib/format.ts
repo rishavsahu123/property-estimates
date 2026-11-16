@@ -10,6 +10,11 @@ export const numfmt = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 
 export const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 /** 27 Oct 2026 */
 export const fdate = (ts: number | Date): string => { const d = new Date(ts); return d.getDate() + " " + MON[d.getMonth()] + " " + d.getFullYear(); };
+/** 15 Nov 2026, 1:50 pm */
+export const fdatetime = (ts: number | Date): string => { const d = new Date(ts), h = d.getHours(), m = String(d.getMinutes()).padStart(2, "0");
+  return `${fdate(d)}, ${h % 12 || 12}:${m} ${h < 12 ? "am" : "pm"}`; };
+/** for file names: 2026-11-15-1350 */
+export const stampName = (d: Date = new Date()): string => `${localDay(d)}-${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}`;
 /** "2026-10-27" → 27 Oct 2026 */
 export const shortDay = (s: string): string => { const [y, m, d] = s.split("-").map(Number); return `${d} ${MON[m - 1]} ${y}`; };
 /** Local date as YYYY-MM-DD (not UTC). */

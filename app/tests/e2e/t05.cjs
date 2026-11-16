@@ -1,7 +1,7 @@
 // Upgrade from v2.2 (catalog, no groups) -> groups with Unknown, view switch, dropdown picker, group CRUD, receipt, backup.
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
-const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups } = require('./env.cjs');
+const { OUT, SERVE, DIST, FIX, pickItem, pickerGroups, readBackup } = require('./env.cjs');
 const URL = 'http://localhost:8090/';
 (async () => {
   const browser = await chromium.launch();
@@ -101,7 +101,7 @@ const URL = 'http://localhost:8090/';
   await page.click('#m-down-b');
   const [dl2] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), page.click('#backup')]);
   await dl2.saveAs(OUT + '/g-backup.json');
-  const bk = JSON.parse(fs.readFileSync(OUT + '/g-backup.json'));
+  const bk = readBackup(OUT + '/g-backup.json');
   r.backup = { version: bk.version, groups: bk.groups.map(g => g.n + ':' + g.kind), slips: Object.keys(bk.slips).length, slipBytes: Object.values(bk.slips)[0].length };
   // excel + pdf still work
   await page.click('#m-down-b'); const [dl3] = await Promise.all([page.waitForEvent('download', { timeout: 20000 }), page.click('#excel')]); r.excel = dl3.suggestedFilename();

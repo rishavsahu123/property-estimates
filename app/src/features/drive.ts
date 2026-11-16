@@ -2,7 +2,7 @@
 // Daily / Weekly / Monthly / Only when I tap, Wi-Fi only, Back up now, last backup, restore on a new phone.
 // Uses only the drive.file permission: the app sees just the files it made, nothing else in the user's Drive.
 import { DRIVE_FOLDER, DRIVE_KEEP, GOOGLE_CLIENT_ID, GOOGLE_SCOPES } from "../lib/config";
-import { fdate } from "../lib/format";
+import { fdatetime } from "../lib/format";
 import { D } from "../state";
 import * as dom from "../ui/dom";
 import * as sheets from "../ui/sheets";
@@ -19,7 +19,9 @@ const lset = dom.lset as unknown as (k: string, v: unknown) => void;
 const toast = dom.toast as unknown as (msg: string, act?: { label: string; fn: () => void }) => void;
 const ask = (title: string, msg: string, o?: { ok?: string; cancel?: string; danger?: boolean }): Promise<boolean> => (sheets.ask as unknown as typeof ask)(title, msg, o);
 const openSheet = (title: string, html: string): Sheet => (sheets.openSheet as unknown as (t: string, h: string) => Sheet)(title, html);
-const buildBackupJSON = (): Promise<string> => (backup.buildBackupJSON as unknown as () => Promise<string>)();
+interface BackupFile { blob: Blob; name: string; size: number; encrypted: boolean; count: number }
+const buildBackupFile = (): Promise<BackupFile> => (backup.buildBackupFile as unknown as () => Promise<BackupFile>)();
+const readBackupFile = (b: Blob): Promise<{ savedAt?: number } | null> => (backup.readBackupFile as unknown as (b: Blob) => Promise<{ savedAt?: number } | null>)(b);
 const restoreData = (d: unknown, o?: { from?: string }): Promise<boolean> => (backup.restoreData as unknown as typeof restoreData)(d, o);
 const fsize = (b: number): string => (files.fsize as unknown as (b: number) => string)(b);
 const backupNote = (): void => (home.backupNote as unknown as () => void)();
@@ -123,28 +125,27 @@ export async function backupNow({ interactive = true, quiet = false } = {}): Pro
   try {
     await getToken(interactive);
     if (!quiet) toast("Backing up to Google Drive…");
-    const body = await buildBackupJSON(), f = await folderId();
-    const d = new Date(), pad = (n: number) => String(n).padStart(2, "0");
-    const name = `property-estimates-backup-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+    const bk = await buildBackupFile(), f = await folderId();
+    const name = bk.name, mime = bk.encrypted ? "application/octet-stream" : "application/zip";
     // resumable upload: works for big backups with many photos
     const t = await getToken(false);
     const start = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,size", {
-      method: "POST", headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json; charset=UTF-8", "X-Upload-Content-Type": "application/json" },
-      body: JSON.stringify({ name, parents: [f], mimeType: "application/json" }),
+      method: "POST", headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json; charset=UTF-8", "X-Upload-Content-Type": mime },
+      body: JSON.stringify({ name, parents: [f], mimeType: mime }),
     });
     if (start.status === 401) { token = null; throw new Error("needs-tap"); }
     const loc = start.headers.get("Location");
     if (!start.ok || !loc) throw new Error("upload-start");
-    const up = await fetch(loc, { method: "PUT", headers: { "Content-Type": "application/json" }, body });
+    const up = await fetch(loc, { method: "PUT", headers: { "Content-Type": mime }, body: bk.blob });
     if (!up.ok) throw new Error("upload");
-    const size = new Blob([body]).size;
+    const size = bk.size;
     saveState({ last: { at: Date.now(), size } });
     lset("ghk-backup", Date.now());
     // keep only the latest few
     const all = await listBackups();
     for (const old of all.slice(DRIVE_KEEP)) await api(`${DRV}/files/${old.id}`, { method: "DELETE" }).catch(() => {});
     backupNote(); paintDueBar();
-    if (!quiet) toast(`Backed up to Google Drive · ${fsize(size)}`);
+    if (!quiet) toast(`Backed up to Google Drive · ${bk.encrypted ? "password-protected · " : ""}${fsize(size)}`);
     return true;
   } catch (err) {
     const m = (err as Error).message;
@@ -179,7 +180,7 @@ export function paintDueBar(): void {
   const st = driveState(), due = isDue(st) && !(st.wifiOnly && !onWifiOrUnknown());
   bar.hidden = !due;
   if (due) {
-    bar.innerHTML = `<span>${st.last ? `Google Drive backup is due (last ${fdate(st.last.at)}).` : "First Google Drive backup is due."}</span><button class="linkbtn" id="dd-go">Back up now</button>`;
+    bar.innerHTML = `<span>${st.last ? `Google Drive backup is due (last ${fdatetime(st.last.at)}).` : "First Google Drive backup is due."}</span><button class="linkbtn" id="dd-go">Back up now</button>`;
     $("#dd-go")!.addEventListener("click", () => { void backupNow(); });
   }
 }
@@ -211,11 +212,12 @@ async function restoreFromDrive(s: Sheet): Promise<void> {
     const files = await listBackups();
     if (!files.length) { toast("No backups in your Google Drive yet"); return; }
     const pick = files[0];
-    const when = pick.createdTime ? fdate(new Date(pick.createdTime)) : pick.name;
+    const when = pick.createdTime ? fdatetime(new Date(pick.createdTime)) : pick.name;
     const t = await getToken(false);
     const r = await fetch(`${DRV}/files/${pick.id}?alt=media`, { headers: { Authorization: `Bearer ${t}` } });
     if (!r.ok) throw new Error("get");
-    const data = await r.json();
+    const data = await readBackupFile(await r.blob());
+    if (!data) return;
     const done = await restoreData(data, { from: `Google Drive backup from ${when}${pick.size ? `, ${fsize(+pick.size)}` : ""}` });
     if (done && s.refresh) s.refresh();
   } catch (err) { console.error(err); toast("Couldn’t read the backup from Google Drive. Try again."); }
@@ -234,7 +236,7 @@ export function openDrive(): void {
         if (!(await signIn())) return;
         paint();
         // a new phone with no payments: offer the latest Drive backup straight away
-        if (!D.entries.length) { try { const f = await listBackups(); if (f.length && await ask("Restore your Google Drive backup?", `Found a backup from ${f[0].createdTime ? fdate(new Date(f[0].createdTime)) : "earlier"}.`, { ok: "Restore" })) await restoreFromDrive(s); } catch { /* ignore */ } }
+        if (!D.entries.length) { try { const f = await listBackups(); if (f.length && await ask("Restore your Google Drive backup?", `Found a backup from ${f[0].createdTime ? fdatetime(new Date(f[0].createdTime)) : "earlier"}.`, { ok: "Restore" })) await restoreFromDrive(s); } catch { /* ignore */ } }
         else if (driveState().on) { if (await backupNow()) paint(); }
       });
       return;
@@ -246,7 +248,7 @@ export function openDrive(): void {
         <div class="chips">${(Object.keys(FREQ_LABEL) as Freq[]).map(k => `<button type="button" class="chip" data-fq="${k}" aria-pressed="${k === st.freq}">${FREQ_LABEL[k]}</button>`).join("")}</div>
         <label class="check"><input type="checkbox" id="dr-wifi"${st.wifiOnly ? " checked" : ""}>Only on Wi-Fi</label>
       </div>
-      <div class="sumstrip"><div>Last backup<span style="display:block;font-size:15px;margin-top:6px">${st.last ? fdate(st.last.at) : "Not yet"}</span></div><div>Size<span style="display:block;font-size:15px;margin-top:6px">${st.last ? fsize(st.last.size) : "—"}</span></div><div>Keeps<span style="display:block;font-size:15px;margin-top:6px">latest ${DRIVE_KEEP}</span></div></div>
+      <div class="sumstrip"><div>Last backup<span style="display:block;font-size:15px;margin-top:6px">${st.last ? fdatetime(st.last.at) : "Not yet"}</span></div><div>Size<span style="display:block;font-size:15px;margin-top:6px">${st.last ? fsize(st.last.size) : "—"}</span></div><div>Keeps<span style="display:block;font-size:15px;margin-top:6px">latest ${DRIVE_KEEP}</span></div></div>
       <button class="primary" id="dr-now"${st.on ? "" : " disabled"}>Back up now</button>
       <button class="second" id="dr-res">Restore from Google Drive</button>
       <p class="hint">${st.on ? (st.freq === "manual" ? "Backs up only when you tap Back up now." : `Backs up ${FREQ_LABEL[st.freq].toLowerCase()} when you open the app${st.wifiOnly ? " on Wi-Fi" : ""}. If Google asks you to confirm, a bar on the Home screen shows Back up now.`) : "Backup is off. Nothing is uploaded."}</p>`;
@@ -265,5 +267,5 @@ export function driveSummary(): string {
   const st = driveState();
   if (!st.email) return "Off · sign in to keep a copy in your Google Drive";
   if (!st.on) return `${st.email} · backup off`;
-  return `${st.email} · ${FREQ_LABEL[st.freq]}${st.last ? ` · last ${fdate(st.last.at)}` : ""}`;
+  return `${st.email} · ${FREQ_LABEL[st.freq]}${st.last ? ` · last ${fdatetime(st.last.at)}` : ""}`;
 }

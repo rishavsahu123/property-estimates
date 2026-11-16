@@ -24,3 +24,14 @@ module.exports.pickerGroups = async (page, root = '#addform') => {
   await page.evaluate(() => { const s = [...window.__pe.SHEETS].pop(); s && s.close(); });
   return Object.assign(g, { items });
 };
+// read a backup file made by the app (.zip v4, or old .json): data.json plus the list of files inside
+module.exports.readBackup = (file) => {
+  const fs = require('fs'), buf = fs.readFileSync(file);
+  if (buf[0] === 0x50 && buf[1] === 0x4b) {
+    const { unzipSync, strFromU8 } = require('fflate');
+    const z = unzipSync(new Uint8Array(buf)), data = JSON.parse(strFromU8(z['data.json']));
+    data.zipNames = Object.keys(z); data.slips = Object.fromEntries(Object.entries(data.files || {}).map(([k, f]) => [k, z[f.path]]));
+    return data;
+  }
+  return JSON.parse(buf.toString());
+};
